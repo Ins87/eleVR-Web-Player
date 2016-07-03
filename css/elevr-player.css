@@ -29,8 +29,8 @@ body {
 
 select {
   border: none;
-  background: rgba(0,0,0,.6);
-  color: rgba(255,255,255,.8);
+  background: rgba(0, 0, 0, .6);
+  color: rgba(255, 255, 255, .8);
   padding: 2px;
   border-radius: 3px;
 }
@@ -41,16 +41,16 @@ select {
 
 a {
   cursor: pointer;
-  color: rgba(0,0,0,.5);
+  color: rgba(0, 0, 0, .5);
 }
 
 a:hover {
-  color: rgba(255,255,255,.65);
+  color: rgba(255, 255, 255, .65);
 }
 
 a:active {
-  color: rgba(255,255,255,.8);
-  text-shadow: 2px 2px 3px rgba(200,200,200,.9);
+  color: rgba(255, 255, 255, .8);
+  text-shadow: 2px 2px 3px rgba(200, 200, 200, .9);
 }
 
 #video-container {
@@ -76,28 +76,31 @@ a:active {
 }
 
 #glcanvas {
-  position:absolute;
-  top:0; bottom:0; right:0; left:0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
 }
 
 #video-controls {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 0 10px;
   opacity: .9;
   height: 30px;
-  background-color: rgb(237,25,88);
+  background-color: rgb(237, 25, 88);
 
-  background: -webkit-linear-gradient(left top, rgb(190,25,141), rgb(237,25,88));
-  background: -o-linear-gradient(bottom right, rgb(190,25,141), rgb(237,25,88));
-  background: -moz-linear-gradient(bottom right, rgb(190,25,141), rgb(237,25,88));
-  background: linear-gradient(to bottom right, rgb(190,25,141), rgb(237,25,88));
+  background: -webkit-linear-gradient(left top, rgb(190, 25, 141), rgb(237, 25, 88));
+  background: -o-linear-gradient(bottom right, rgb(190, 25, 141), rgb(237, 25, 88));
+  background: -moz-linear-gradient(bottom right, rgb(190, 25, 141), rgb(237, 25, 88));
+  background: linear-gradient(to bottom right, rgb(190, 25, 141), rgb(237, 25, 88));
 }
 
 #seek-bar {
-	width: 35%;
+  width: 35%;
   float: left;
   margin-top: 3px;
 }
@@ -110,18 +113,18 @@ select {
 
 .icon {
   margin: 7px 5px 0px 5px;
-  width:20px;
+  width: 20px;
   float: left;
 }
 
 .rfloat {
   float: right;
-  margin-top:5px;
+  margin-top: 5px;
 }
 
 .title, .message, .large-play {
   text-align: center;
   margin: 0 auto;
   display: block;
-  color: rgba(255,255,255,.5);
+  color: rgba(255, 255, 255, .5);
 }

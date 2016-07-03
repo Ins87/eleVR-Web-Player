@@ -1,15 +1,15 @@
-(function(global) {
+(function (global) {
   'use strict';
 
   var webVR = {
 
-    initWebVR: function() {
+    initWebVR: function () {
       if (navigator.getVRDevices) {
         navigator.getVRDevices().then(webVR.vrDeviceCallback);
       }
     },
 
-    vrDeviceCallback: function(vrdevs) {
+    vrDeviceCallback: function (vrdevs) {
       for (var i = 0; i < vrdevs.length; ++i) {
         if (vrdevs[i] instanceof HMDVRDevice) {
           vrHMD = vrdevs[i];
@@ -23,8 +23,7 @@
       // Then, find that HMD's position sensor
       for (i = 0; i < vrdevs.length; ++i) {
         if (vrdevs[i] instanceof PositionSensorVRDevice &&
-            vrdevs[i].hardwareUnitId == vrHMD.hardwareUnitId)
-        {
+          vrdevs[i].hardwareUnitId == vrHMD.hardwareUnitId) {
           vrSensor = vrdevs[i];
           break;
         }

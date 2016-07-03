@@ -16,16 +16,17 @@
 
 var currentScreenOrientation = window.orientation || 0; // active default
 
-var timing = {showTiming: false, // Switch to true to show frame times in the console
-              frameTime: 0,
-              prevFrameTime: 0,
-              canvasResized: 0,
-              textureLoaded: 0,
-              textureTime: 0,
-              start: 0,
-              end: 0,
-              framesSinceIssue: 0
-              };
+var timing = {
+  showTiming: false, // Switch to true to show frame times in the console
+  frameTime: 0,
+  prevFrameTime: 0,
+  canvasResized: 0,
+  textureLoaded: 0,
+  textureTime: 0,
+  start: 0,
+  end: 0,
+  framesSinceIssue: 0
+};
 
 var called = {};
 var videoOptions = {};
@@ -121,7 +122,7 @@ function runEleVRPlayer() {
     window.video.addEventListener('ended', controls.ended);
 
     // Keep a record of all the videos that are in the drop-down menu.
-    Array.prototype.slice.call(window.videoSelect.options).forEach(function(option) {
+    Array.prototype.slice.call(window.videoSelect.options).forEach(function (option) {
       videoOptions[option.value] = option;
     });
   }
@@ -213,14 +214,14 @@ function initFromSettings(newSettings) {
   }
 }
 
-window.addEventListener('hashchange', function() {
+window.addEventListener('hashchange', function () {
   // Remove the querystring if there were custom parameters.
   window.history.pushState('', document.title, window.location.pathname + window.location.hash);
 
   initFromSettings(window.location.hash);
 });
 
-window.addEventListener('message', function(e) {
+window.addEventListener('message', function (e) {
   if (typeof e.data === 'object') {
     window.location.hash = '#' + JSON.stringify(e.data);
   } else if (typeof e.data === 'string') {

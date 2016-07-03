@@ -3,43 +3,43 @@
 var reqAnimFrameID = 0;
 var projection = 0;
 var manualRotation = quat.create(),
-    degtorad = Math.PI / 180;  // Degree-to-Radian conversion
+  degtorad = Math.PI / 180;  // Degree-to-Radian conversion
 
-(function(global) {
+(function (global) {
   'use strict';
 
   var videoObjectURL;
 
   var controls = {
     manualControls: {
-      'a' : {index: 1, sign: 1, active: 0},
-      'd' : {index: 1, sign: -1, active: 0},
-      'w' : {index: 0, sign: 1, active: 0},
-      's' : {index: 0, sign: -1, active: 0},
-      'q' : {index: 2, sign: -1, active: 0},
-      'e' : {index: 2, sign: 1, active: 0},
+      'a': {index: 1, sign: 1, active: 0},
+      'd': {index: 1, sign: -1, active: 0},
+      'w': {index: 0, sign: 1, active: 0},
+      's': {index: 0, sign: -1, active: 0},
+      'q': {index: 2, sign: -1, active: 0},
+      'e': {index: 2, sign: 1, active: 0},
     },
 
     manualRotateRate: new Float32Array([0, 0, 0]),  // Vector, camera-relative
 
-    create: function() {
-      playButton.addEventListener('click', function() {
+    create: function () {
+      playButton.addEventListener('click', function () {
         controls.playPause();
       });
 
-      playL.addEventListener('click', function() {
+      playL.addEventListener('click', function () {
         controls.playPause();
       });
 
-      playR.addEventListener('click', function() {
+      playR.addEventListener('click', function () {
         controls.playPause();
       });
 
-      loopButton.addEventListener('click', function() {
+      loopButton.addEventListener('click', function () {
         controls.toggleLooping();
       });
 
-      muteButton.addEventListener('click', function() {
+      muteButton.addEventListener('click', function () {
         if (video.muted === false) {
           controls.mute();
         } else {
@@ -47,11 +47,11 @@ var manualRotation = quat.create(),
         }
       });
 
-      fullScreenButton.addEventListener('click', function() {
+      fullScreenButton.addEventListener('click', function () {
         controls.fullscreen();
       });
 
-      recenterButton.addEventListener('click', function() {
+      recenterButton.addEventListener('click', function () {
         if (typeof vrSensor !== 'undefined') {
           vrSensor.zeroSensor(); // Untested
         }
@@ -60,13 +60,13 @@ var manualRotation = quat.create(),
         }
       });
 
-      seekBar.addEventListener('change', function() {
+      seekBar.addEventListener('change', function () {
         // Calculate the new time
         var time = video.duration * (seekBar.value / 100);
         video.currentTime = time;
       });
 
-      video.addEventListener('timeupdate', function() {
+      video.addEventListener('timeupdate', function () {
         // don't update if paused,
         // we get last time update after seekBar mousedown pauses
         if (!video.paused) {
@@ -78,20 +78,20 @@ var manualRotation = quat.create(),
 
       // Pause the video when the slider handle is being dragged
       var tempPause = false;
-      seekBar.addEventListener('mousedown', function() {
+      seekBar.addEventListener('mousedown', function () {
         if (!video.paused) {
           video.pause();
           tempPause = true;
         }
       });
 
-      seekBar.addEventListener('mouseup', function() {
+      seekBar.addEventListener('mouseup', function () {
         if (tempPause) {
           video.play();
         }
       });
 
-      videoSelect.addEventListener('change', function() {
+      videoSelect.addEventListener('change', function () {
         projection = videoSelect.value[0];
         projectionSelect.value = projection;
 
@@ -107,17 +107,17 @@ var manualRotation = quat.create(),
       });
 
 
-      projectionSelect.addEventListener('change', function() {
+      projectionSelect.addEventListener('change', function () {
         projection = projectionSelect.value;
       });
 
-      document.getElementById('select-local-file').addEventListener('click', function(event) {
+      document.getElementById('select-local-file').addEventListener('click', function (event) {
         event.preventDefault();
         controls.selectLocalVideo();
       });
     },
 
-    enableKeyControls: function() {
+    enableKeyControls: function () {
       function key(event, sign) {
         var control = controls.manualControls[String.fromCharCode(event.keyCode).toLowerCase()];
         if (!control)
@@ -130,43 +130,47 @@ var manualRotation = quat.create(),
 
       function onkey(event) {
         switch (String.fromCharCode(event.charCode)) {
-        case 'f':
-          controls.fullscreen();
-          break;
-        case 'z':
-          if (typeof vrSensor !== 'undefined') {
-            vrSensor.zeroSensor();
-          }
-          else {
-            quat.invert(manualRotation, webGL.getPhoneVR().rotationQuat());
-          }
-          break;
-        case 'p':
-          controls.playPause();
-          break;
-        case ' ': //spacebar
-          controls.playPause();
-          break;
-        case 'g':
-          controls.fullscreenIgnoreHMD();
-          break;
-        case 'l':
-          controls.toggleLooping();
-          break;
+          case 'f':
+            controls.fullscreen();
+            break;
+          case 'z':
+            if (typeof vrSensor !== 'undefined') {
+              vrSensor.zeroSensor();
+            }
+            else {
+              quat.invert(manualRotation, webGL.getPhoneVR().rotationQuat());
+            }
+            break;
+          case 'p':
+            controls.playPause();
+            break;
+          case ' ': //spacebar
+            controls.playPause();
+            break;
+          case 'g':
+            controls.fullscreenIgnoreHMD();
+            break;
+          case 'l':
+            controls.toggleLooping();
+            break;
         }
       }
 
-      document.addEventListener('keydown', function(event) { key(event, 1); },
-              false);
-      document.addEventListener('keyup', function(event) { key(event, -1); },
-              false);
+      document.addEventListener('keydown', function (event) {
+          key(event, 1);
+        },
+        false);
+      document.addEventListener('keyup', function (event) {
+          key(event, -1);
+        },
+        false);
       window.addEventListener('keypress', onkey, true);
     },
 
     /**
      * Video Commands
      */
-    loaded: function() {
+    loaded: function () {
       window.leftLoad.classList.add('hidden');
       window.rightLoad.classList.add('hidden');
       if (video.paused) {
@@ -175,7 +179,7 @@ var manualRotation = quat.create(),
       }
     },
 
-    play: function() {
+    play: function () {
       if (video.ended) {
         video.currentTime = 0.1;
       }
@@ -194,7 +198,7 @@ var manualRotation = quat.create(),
       }
     },
 
-    pause: function() {
+    pause: function () {
       video.pause();
 
       window.playButton.className = 'fa fa-play icon';
@@ -204,7 +208,7 @@ var manualRotation = quat.create(),
       window.rightPlay.classList.remove('hidden');
     },
 
-    playPause: function() {
+    playPause: function () {
       if (video.paused === true) {
         controls.play();
       } else {
@@ -212,14 +216,14 @@ var manualRotation = quat.create(),
       }
     },
 
-    setLooping: function(loop) {
+    setLooping: function (loop) {
       loop = !!loop;
       if (video.loop !== loop) {
         controls.toggleLooping();
       }
     },
 
-    toggleLooping: function() {
+    toggleLooping: function () {
       if (video.loop === true) {
         loopButton.className = 'fa fa-refresh icon';
         loopButton.title = 'Start Looping';
@@ -231,7 +235,7 @@ var manualRotation = quat.create(),
       }
     },
 
-    ended: function() {
+    ended: function () {
       controls.pause();
       if (reqAnimFrameID) {
         cancelAnimationFrame(reqAnimFrameID);
@@ -239,7 +243,7 @@ var manualRotation = quat.create(),
       }
     },
 
-    mute: function() {
+    mute: function () {
       if (video.muted) {
         return;
       }
@@ -248,7 +252,7 @@ var manualRotation = quat.create(),
       window.muteButton.title = 'Unmute';
     },
 
-    unmute: function() {
+    unmute: function () {
       if (!video.muted) {
         return;
       }
@@ -257,7 +261,7 @@ var manualRotation = quat.create(),
       window.muteButton.title = 'Mute';
     },
 
-    selectLocalVideo: function() {
+    selectLocalVideo: function () {
       var input = document.createElement('input');
       input.type = 'file';
       input.accept = 'video/*';
@@ -279,7 +283,7 @@ var manualRotation = quat.create(),
       input.click();
     },
 
-    loadVideo: function(videoFile) {
+    loadVideo: function (videoFile) {
       controls.pause();
       window.leftPlay.classList.add('hidden');
       window.rightPlay.classList.add('hidden');
@@ -310,33 +314,33 @@ var manualRotation = quat.create(),
       }
     },
 
-    fullscreen: function() {
+    fullscreen: function () {
       if (canvas.mozRequestFullScreen) {
-        canvas.mozRequestFullScreen({ vrDisplay: vrHMD }); // Firefox
+        canvas.mozRequestFullScreen({vrDisplay: vrHMD}); // Firefox
       } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen({ vrDisplay: vrHMD }); // Chrome and Safari
-      } else if (canvas.requestFullScreen){
+        canvas.webkitRequestFullscreen({vrDisplay: vrHMD}); // Chrome and Safari
+      } else if (canvas.requestFullScreen) {
         canvas.requestFullscreen();
       }
     },
 
-    fullscreenIgnoreHMD: function() {
+    fullscreenIgnoreHMD: function () {
       if (canvas.mozRequestFullScreen) {
         canvas.mozRequestFullScreen(); // Firefox
       } else if (canvas.webkitRequestFullscreen) {
         canvas.webkitRequestFullscreen(); // Chrome and Safari
-      } else if (canvas.requestFullScreen){
+      } else if (canvas.requestFullScreen) {
         canvas.requestFullscreen();
       }
     },
 
-    hide: function() {
+    hide: function () {
       window.videoControls.classList.add('hidden');
       window.messageL.classList.add('hidden');
       window.messageR.classList.add('hidden');
     },
 
-    show: function() {
+    show: function () {
       window.videoControls.classList.remove('hidden');
       window.messageL.classList.remove('hidden');
       window.messageR.classList.remove('hidden');
