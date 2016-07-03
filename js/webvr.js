@@ -17,22 +17,23 @@
         }
       }
 
-      if (!vrHMD)
+      if (!vrHMD) {
         return;
+      }
 
       // Then, find that HMD's position sensor
       for (i = 0; i < vrdevs.length; ++i) {
         if (vrdevs[i] instanceof PositionSensorVRDevice &&
-          vrdevs[i].hardwareUnitId == vrHMD.hardwareUnitId) {
+          vrdevs[i].hardwareUnitId === vrHMD.hardwareUnitId) {
           vrSensor = vrdevs[i];
           break;
         }
       }
 
       if (!vrSensor) {
-        alert("Found an HMD, but didn't find its orientation sensor?");
+        alert('Found an HMD, but didn\'t find its orientation sensor?');
       }
-    }
+    },
 
   };
 

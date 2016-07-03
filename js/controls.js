@@ -11,6 +11,8 @@ var manualRotation = quat.create(),
   var videoObjectURL;
 
   var controls = {
+    video: null,
+    canvas: null,
     manualControls: {
       'a': {index: 1, sign: 1, active: 0},
       'd': {index: 1, sign: -1, active: 0},
@@ -22,7 +24,9 @@ var manualRotation = quat.create(),
 
     manualRotateRate: new Float32Array([0, 0, 0]),  // Vector, camera-relative
 
-    create: function () {
+    create: function (video, canvas) {
+      controls.video = video;
+      controls.canvas = canvas;
       playButton.addEventListener('click', function () {
         controls.playPause();
       });
@@ -40,7 +44,7 @@ var manualRotation = quat.create(),
       });
 
       muteButton.addEventListener('click', function () {
-        if (video.muted === false) {
+        if (controls.video.muted === false) {
           controls.mute();
         } else {
           controls.unmute();
@@ -62,16 +66,16 @@ var manualRotation = quat.create(),
 
       seekBar.addEventListener('change', function () {
         // Calculate the new time
-        var time = video.duration * (seekBar.value / 100);
-        video.currentTime = time;
+        var time = controls.video.duration * (seekBar.value / 100);
+        controls.video.currentTime = time;
       });
 
-      video.addEventListener('timeupdate', function () {
+      controls.video.addEventListener('timeupdate', function () {
         // don't update if paused,
         // we get last time update after seekBar mousedown pauses
-        if (!video.paused) {
+        if (!controls.video.paused) {
           // Calculate the slider value
-          var value = (100 / video.duration) * video.currentTime;
+          var value = (100 / controls.video.duration) * controls.video.currentTime;
           seekBar.value = value;
         }
       });
@@ -79,15 +83,15 @@ var manualRotation = quat.create(),
       // Pause the video when the slider handle is being dragged
       var tempPause = false;
       seekBar.addEventListener('mousedown', function () {
-        if (!video.paused) {
-          video.pause();
+        if (!controls.video.paused) {
+          controls.video.pause();
           tempPause = true;
         }
       });
 
       seekBar.addEventListener('mouseup', function () {
         if (tempPause) {
-          video.play();
+          controls.video.play();
         }
       });
 
@@ -173,19 +177,19 @@ var manualRotation = quat.create(),
     loaded: function () {
       window.leftLoad.classList.add('hidden');
       window.rightLoad.classList.add('hidden');
-      if (video.paused) {
+      if (controls.video.paused) {
         window.leftPlay.classList.remove('hidden');
         window.rightPlay.classList.remove('hidden');
       }
     },
 
     play: function () {
-      if (video.ended) {
-        video.currentTime = 0.1;
+      if (controls.video.ended) {
+        controls.video.currentTime = 0.1;
       }
 
-      video.play();
-      if (!video.paused) { // In case somehow hitting play button doesn't work.
+      controls.video.play();
+      if (!controls.video.paused) { // In case somehow hitting play button doesn't work.
         window.leftPlay.classList.add('hidden');
         window.rightPlay.classList.add('hidden');
 
@@ -199,7 +203,7 @@ var manualRotation = quat.create(),
     },
 
     pause: function () {
-      video.pause();
+      controls.video.pause();
 
       window.playButton.className = 'fa fa-play icon';
       window.playButton.title = 'Play';
@@ -209,7 +213,7 @@ var manualRotation = quat.create(),
     },
 
     playPause: function () {
-      if (video.paused === true) {
+      if (controls.video.paused === true) {
         controls.play();
       } else {
         controls.pause();
@@ -218,20 +222,20 @@ var manualRotation = quat.create(),
 
     setLooping: function (loop) {
       loop = !!loop;
-      if (video.loop !== loop) {
+      if (controls.video.loop !== loop) {
         controls.toggleLooping();
       }
     },
 
     toggleLooping: function () {
-      if (video.loop === true) {
+      if (controls.video.loop === true) {
         loopButton.className = 'fa fa-refresh icon';
         loopButton.title = 'Start Looping';
-        video.loop = false;
+        controls.video.loop = false;
       } else {
         loopButton.className = 'fa fa-chain-broken icon';
         loopButton.title = 'Stop Looping';
-        video.loop = true;
+        controls.video.loop = true;
       }
     },
 
@@ -244,19 +248,19 @@ var manualRotation = quat.create(),
     },
 
     mute: function () {
-      if (video.muted) {
+      if (controls.video.muted) {
         return;
       }
-      video.muted = true;
+      controls.video.muted = true;
       window.muteButton.className = 'fa fa-volume-off icon';
       window.muteButton.title = 'Unmute';
     },
 
     unmute: function () {
-      if (!video.muted) {
+      if (!controls.video.muted) {
         return;
       }
-      video.muted = false;
+      controls.video.muted = false;
       window.muteButton.className = 'fa fa-volume-up icon';
       window.muteButton.title = 'Mute';
     },
@@ -307,7 +311,7 @@ var manualRotation = quat.create(),
       var oldObjURL = videoObjectURL;
       videoObjectURL = null;
 
-      video.src = videoFile;
+      controls.video.src = videoFile;
 
       if (videoObjectURL && videoObjectURL !== videoFile) {
         URL.removeObjectURL(oldObjURL);
@@ -315,22 +319,22 @@ var manualRotation = quat.create(),
     },
 
     fullscreen: function () {
-      if (canvas.mozRequestFullScreen) {
-        canvas.mozRequestFullScreen({vrDisplay: vrHMD}); // Firefox
-      } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen({vrDisplay: vrHMD}); // Chrome and Safari
-      } else if (canvas.requestFullScreen) {
-        canvas.requestFullscreen();
+      if (controls.canvas.mozRequestFullScreen) {
+        controls.canvas.mozRequestFullScreen({vrDisplay: vrHMD}); // Firefox
+      } else if (controls.canvas.webkitRequestFullscreen) {
+        controls.canvas.webkitRequestFullscreen({vrDisplay: vrHMD}); // Chrome and Safari
+      } else if (controls.canvas.requestFullScreen) {
+        controls.canvas.requestFullscreen();
       }
     },
 
     fullscreenIgnoreHMD: function () {
-      if (canvas.mozRequestFullScreen) {
-        canvas.mozRequestFullScreen(); // Firefox
-      } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen(); // Chrome and Safari
-      } else if (canvas.requestFullScreen) {
-        canvas.requestFullscreen();
+      if (controls.canvas.mozRequestFullScreen) {
+        controls.canvas.mozRequestFullScreen(); // Firefox
+      } else if (controls.canvas.webkitRequestFullscreen) {
+        controls.canvas.webkitRequestFullscreen(); // Chrome and Safari
+      } else if (controls.canvas.requestFullScreen) {
+        controls.canvas.requestFullscreen();
       }
     },
 

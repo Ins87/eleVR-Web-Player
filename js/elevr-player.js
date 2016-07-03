@@ -42,7 +42,7 @@ function resizeContainer() {
 
 window.addEventListener('resize', resizeContainer);
 
-function setupControls() {
+function setupControls(video, canvas) {
   if (called.setupControls) {
     return;
   }
@@ -57,9 +57,6 @@ function setupControls() {
   window.rightLoad = document.getElementById('right-load');
   window.leftPlay = document.getElementById('left-play');
   window.rightPlay = document.getElementById('right-play');
-  window.canvas = document.getElementById('glcanvas');
-  window.video = document.getElementById('video');
-
   // Buttons
   window.playButton = document.getElementById('play-pause');
   window.playL = document.getElementById('play-l');
@@ -82,28 +79,27 @@ function setupControls() {
   window.messageL.style.fontSize = window.outerHeight / 30 + 'px';
   window.messageR.style.fontSize = window.outerHeight / 30 + 'px';
 
-  controls.create();
+  controls.create(video, canvas);
 
   called.setupControls = true;
 }
 
-function runEleVRPlayer() {
+function runEleVRPlayer(sourceVideo, destinationCanvas) {
   if (called.runEleVRPlayer) {
     return;
   }
 
-  setupControls();
+  setupControls(sourceVideo, destinationCanvas);
 
   webVR.initWebVR();
-
-  webGL.initWebGL();
+  webGL.initWebGL(sourceVideo, destinationCanvas);
 
   if (webGL.gl) {
     webGL.gl.clearColor(0.0, 0.0, 0.0, 0.0);
     webGL.gl.clearDepth(1.0);
     webGL.gl.disable(webGL.gl.DEPTH_TEST);
 
-    util.setCanvasSize();
+    util.setCanvasSize(destinationCanvas);
 
     // Keyboard Controls
     controls.enableKeyControls();
@@ -118,8 +114,8 @@ function runEleVRPlayer() {
     webGL.initBuffers();
     webGL.initTextures();
 
-    window.video.addEventListener('canplaythrough', controls.loaded);
-    window.video.addEventListener('ended', controls.ended);
+    sourceVideo.addEventListener('canplaythrough', controls.loaded);
+    sourceVideo.addEventListener('ended', controls.ended);
 
     // Keep a record of all the videos that are in the drop-down menu.
     Array.prototype.slice.call(window.videoSelect.options).forEach(function (option) {
@@ -143,7 +139,7 @@ function initFromSettings(newSettings) {
     controls: true,
     loop: true,
     sound: true,
-    projection: 'mono'
+    projection: 'mono',
   });
 
   if (settings.controls) {

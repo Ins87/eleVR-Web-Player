@@ -8,12 +8,16 @@ var vrHMD, vrSensor;
 
   var webGL = {
     gl: null,
+    video: null,
+    canvas: null,
 
-    initWebGL: function () {
+    initWebGL: function (video, canvas) {
+      webGL.video = video;
+      webGL.canvas = canvas;
       webGL.gl = null;
 
       try {
-        webGL.gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        webGL.gl = webGL.canvas.getContext('webgl') || webGL.canvas.getContext('experimental-webgl');
       } catch (e) {
       }
 
@@ -66,9 +70,9 @@ var vrHMD, vrSensor;
       webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, texture);
       webGL.gl.pixelStorei(webGL.gl.UNPACK_FLIP_Y_WEBGL, true);
       webGL.gl.texImage2D(webGL.gl.TEXTURE_2D, 0, webGL.gl.RGB, webGL.gl.RGB,
-        webGL.gl.UNSIGNED_BYTE, video);
+        webGL.gl.UNSIGNED_BYTE, webGL.video);
       webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, null);
-      timing.textureTime = video.currentTime;
+      timing.textureTime = webGL.video.currentTime;
     },
 
     /**
@@ -190,9 +194,9 @@ var vrHMD, vrSensor;
       webGL.gl.uniformMatrix4fv(shader.uniforms['proj_inv'], false, inv);
 
       if (eye === 0) { // left eye
-        webGL.gl.viewport(0, 0, canvas.width / 2, canvas.height);
+        webGL.gl.viewport(0, 0, webGL.canvas.width / 2, webGL.canvas.height);
       } else { // right eye
-        webGL.gl.viewport(canvas.width / 2, 0, canvas.width / 2, canvas.height);
+        webGL.gl.viewport(webGL.canvas.width / 2, 0, webGL.canvas.width / 2, webGL.canvas.height);
       }
 
       // Draw
@@ -206,7 +210,7 @@ var vrHMD, vrSensor;
         timing.start = performance.now();
       }
 
-      util.setCanvasSize();
+      util.setCanvasSize(webGL.canvas);
 
       if (timing.showTiming) {
         timing.canvasResized = performance.now();
@@ -238,7 +242,7 @@ var vrHMD, vrSensor;
         perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(rightParams.recommendedFieldOfView, 0.1, 10);
         webGL.drawOneEye(1, perspectiveMatrix);
       } else {
-        var ratio = (canvas.width / 2) / canvas.height;
+        var ratio = (webGL.canvas.width / 2) / webGL.canvas.height;
         mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
         webGL.drawOneEye(0, perspectiveMatrix);
         webGL.drawOneEye(1, perspectiveMatrix);
