@@ -3,3 +3,6 @@
 *.orig
 *.webm
 .jshintrc
+
+.idea/
+node_modules/
