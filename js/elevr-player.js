@@ -72,6 +72,7 @@ function setupControls(video, canvas) {
   // Selectors
   window.videoSelect = document.getElementById('video-select');
   window.projectionSelect = document.getElementById('projection-select');
+  window.eyesSelect = document.getElementById('eyes-select');
 
   document.getElementById('title-l').style.fontSize = window.outerHeight / 20 + 'px';
   document.getElementById('title-r').style.fontSize = window.outerHeight / 20 + 'px';

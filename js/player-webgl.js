@@ -151,7 +151,7 @@ var vrHMD, vrSensor;
     /**
      * Drawing the scene
      */
-    drawOneEye: function (eye, projectionMatrix) {
+    drawEye: function (eye, projectionMatrix) {
       webGL.gl.useProgram(shader.program);
 
       webGL.gl.bindBuffer(webGL.gl.ARRAY_BUFFER, positionsBuffer);
@@ -162,7 +162,7 @@ var vrHMD, vrSensor;
       webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, texture);
       webGL.gl.uniform1i(shader.uniforms['uSampler'], 0);
 
-      webGL.gl.uniform1f(shader.uniforms['eye'], eye);
+      webGL.gl.uniform1f(shader.uniforms['eye'], eye === 'right' ? 1 : 0);
       webGL.gl.uniform1f(shader.uniforms['projection'], projection);
 
       var rotation = mat4.create();
@@ -193,10 +193,16 @@ var vrHMD, vrSensor;
 
       webGL.gl.uniformMatrix4fv(shader.uniforms['proj_inv'], false, inv);
 
-      if (eye === 0) { // left eye
+      if (eye === 'left') { // left eye
         webGL.gl.viewport(0, 0, webGL.canvas.width / 2, webGL.canvas.height);
-      } else { // right eye
+      }
+
+      if (eye === 'right') { // right eye
         webGL.gl.viewport(webGL.canvas.width / 2, 0, webGL.canvas.width / 2, webGL.canvas.height);
+      }
+
+      if (eye === 'both') { // both eyes
+        webGL.gl.viewport(0, 0, webGL.canvas.width, webGL.canvas.height);
       }
 
       // Draw
@@ -238,16 +244,22 @@ var vrHMD, vrSensor;
         var leftParams = vrHMD.getEyeParameters('left');
         var rightParams = vrHMD.getEyeParameters('right');
         perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(leftParams.recommendedFieldOfView, 0.1, 10);
-        webGL.drawOneEye(0, perspectiveMatrix);
+        webGL.drawEye('left', perspectiveMatrix);
         perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(rightParams.recommendedFieldOfView, 0.1, 10);
-        webGL.drawOneEye(1, perspectiveMatrix);
+        webGL.drawEye('right', perspectiveMatrix);
       } else {
-        var ratio = (webGL.canvas.width / 2) / webGL.canvas.height;
-        mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
-        webGL.drawOneEye(0, perspectiveMatrix);
-        webGL.drawOneEye(1, perspectiveMatrix);
+        var ratio;
+        if (eyesSelect.value === 'one') {
+          ratio = (webGL.canvas.width) / webGL.canvas.height;
+          mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
+          webGL.drawEye('both', perspectiveMatrix);
+        } else {
+          ratio = (webGL.canvas.width / 2) / webGL.canvas.height;
+          mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
+          webGL.drawEye('left', perspectiveMatrix);
+          webGL.drawEye('right', perspectiveMatrix);
+        }
       }
-
 
       if (timing.showTiming) {
         webGL.gl.finish();
@@ -266,7 +278,7 @@ var vrHMD, vrSensor;
 
       reqAnimFrameID = requestAnimationFrame(webGL.drawScene);
       timing.prevFrameTime = timing.frameTime;
-    }
+    },
   };
 
   global.webGL = webGL;
