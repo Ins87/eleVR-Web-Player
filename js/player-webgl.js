@@ -156,15 +156,15 @@ var vrHMD, vrSensor;
     this.gl.useProgram(this.program);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
-    this.gl.vertexAttribPointer(this.attributes['aVertexPosition'], 2, this.gl.FLOAT, false, 0, 0);
+    this.gl.vertexAttribPointer(this.attributes.aVertexPosition, 2, this.gl.FLOAT, false, 0, 0);
 
     // Specify the texture to map onto the faces.
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-    this.gl.uniform1i(this.uniforms['uSampler'], 0);
+    this.gl.uniform1i(this.uniforms.uSampler, 0);
 
-    this.gl.uniform1f(this.uniforms['eye'], eye === 'right' ? 1 : 0);
-    this.gl.uniform1f(this.uniforms['projection'], projection); // Todo remove global
+    this.gl.uniform1f(this.uniforms.eye, eye === 'right' ? 1 : 0);
+    this.gl.uniform1f(this.uniforms.projection, projection); // Todo remove global
 
     var rotation = mat4.create();
     var totalRotation = quat.create();
@@ -192,7 +192,7 @@ var vrHMD, vrSensor;
     var inv = mat4.create();
     mat4.multiply(inv, rotation, projectionInverse);
 
-    this.gl.uniformMatrix4fv(this.uniforms['proj_inv'], false, inv);
+    this.gl.uniformMatrix4fv(this.uniforms.proj_inv, false, inv);
 
     if (eye === 'left') { // left eye
       this.gl.viewport(0, 0, this.canvas.width / 2, this.canvas.height);
@@ -213,7 +213,7 @@ var vrHMD, vrSensor;
 
   PlayerWebGL.prototype.play = function play() {
     var self = this;
-    reqAnimFrameID = requestAnimationFrame(function(frameTime) {
+    this.reqAnimFrameID = requestAnimationFrame(function(frameTime) {
       self.drawScene(frameTime);
     });
   };
