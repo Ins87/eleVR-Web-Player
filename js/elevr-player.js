@@ -10,23 +10,9 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
-/* global controls, projection, util, webGL, webVR */
+/* global controls, projection, util, webVR */
 
 'use strict';
-
-var currentScreenOrientation = window.orientation || 0; // active default
-
-var timing = {
-  showTiming: false, // Switch to true to show frame times in the console
-  frameTime: 0,
-  prevFrameTime: 0,
-  canvasResized: 0,
-  textureLoaded: 0,
-  textureTime: 0,
-  start: 0,
-  end: 0,
-  framesSinceIssue: 0
-};
 
 var called = {};
 var videoOptions = {};
@@ -85,38 +71,35 @@ function setupControls(video, canvas) {
   called.setupControls = true;
 }
 
-function runEleVRPlayer(sourceVideo, destinationCanvas) {
-  if (called.runEleVRPlayer) {
+function EleVRPlayer(sourceVideo, destinationCanvas) {
+  var self = this;
+
+  if (called.runEleVRPlayer) { // Todo check canvas property
     return;
   }
 
   setupControls(sourceVideo, destinationCanvas);
 
   webVR.initWebVR();
-  webGL.initWebGL(sourceVideo, destinationCanvas);
+  this.webGL = new PlayerWebGL(sourceVideo, destinationCanvas);
 
-  if (webGL.gl) {
-    webGL.gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    webGL.gl.clearDepth(1.0);
-    webGL.gl.disable(webGL.gl.DEPTH_TEST);
-
-    util.setCanvasSize(destinationCanvas);
+  if (this.webGL.gl) {
+    util.setCanvasSize(destinationCanvas, this.webGL.getBackingStorePixelRatio());
 
     // Keyboard Controls
     controls.enableKeyControls();
 
-    window.shader = new webGL.Shader({
-      fragmentShaderName: 'shader-fs',
-      vertexShaderName: 'shader-vs',
-      attributes: ['aVertexPosition'],
-      uniforms: ['uSampler', 'eye', 'projection', 'proj_inv'],
+    this.webGL.initBuffers();
+    this.webGL.initTextures();
+
+    sourceVideo.addEventListener('canplaythrough', function() {
+      controls.loaded();
+      self.webGL.play();
     });
-
-    webGL.initBuffers();
-    webGL.initTextures();
-
-    sourceVideo.addEventListener('canplaythrough', controls.loaded);
-    sourceVideo.addEventListener('ended', controls.ended);
+    sourceVideo.addEventListener('ended', function() {
+      self.webGL.stop();
+      controls.ended();
+    });
 
     // Keep a record of all the videos that are in the drop-down menu.
     Array.prototype.slice.call(window.videoSelect.options).forEach(function (option) {

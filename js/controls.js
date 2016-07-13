@@ -1,9 +1,8 @@
-/* global canvas, fullScreenButton, loopButton, muteButton, playL, playR, playButton, projectionSelect, quat, seekBar, webGL, video, videoSelect, vrHMD, vrSensor */
+/* global fullScreenButton, loopButton, muteButton, playL, playR, playButton, projectionSelect, quat, seekBar, videoSelect, vrHMD, vrSensor */
 
 var reqAnimFrameID = 0;
 var projection = 0;
-var manualRotation = quat.create(),
-  degtorad = Math.PI / 180;  // Degree-to-Radian conversion
+var manualRotation = quat.create();
 
 (function (global) {
   'use strict';
@@ -58,9 +57,8 @@ var manualRotation = quat.create(),
       recenterButton.addEventListener('click', function () {
         if (typeof vrSensor !== 'undefined') {
           vrSensor.zeroSensor(); // Untested
-        }
-        else {
-          quat.invert(manualRotation, webGL.getPhoneVR().rotationQuat());
+        } else {
+          quat.invert(manualRotation, PhoneVR.getInstance().rotationQuat());
         }
       });
 
@@ -142,7 +140,7 @@ var manualRotation = quat.create(),
               vrSensor.zeroSensor();
             }
             else {
-              quat.invert(manualRotation, webGL.getPhoneVR().rotationQuat());
+              quat.invert(manualRotation, PhoneVR.getInstance().rotationQuat());
             }
             break;
           case 'p':
@@ -195,10 +193,6 @@ var manualRotation = quat.create(),
 
         window.playButton.className = 'fa fa-pause icon';
         window.playButton.title = 'Pause';
-
-        if (!reqAnimFrameID) {
-          reqAnimFrameID = requestAnimationFrame(webGL.drawScene);
-        }
       }
     },
 
@@ -241,10 +235,6 @@ var manualRotation = quat.create(),
 
     ended: function () {
       controls.pause();
-      if (reqAnimFrameID) {
-        cancelAnimationFrame(reqAnimFrameID);
-        reqAnimFrameID = 0;
-      }
     },
 
     mute: function () {
@@ -294,19 +284,12 @@ var manualRotation = quat.create(),
       window.leftLoad.classList.remove('hidden');
       window.rightLoad.classList.remove('hidden');
 
-      webGL.gl.clear(webGL.gl.COLOR_BUFFER_BIT);
-
       if (reqAnimFrameID) {
         cancelAnimationFrame(reqAnimFrameID);
         reqAnimFrameID = 0;
       }
 
-      // Hack to fix rotation for vidcon video for vidcon
-      if (videoFile === 'videos/Vidcon.webm' || videoFile === 'videos/Vidcon5.mp4') {
-        manualRotation = [0.38175851106643677, -0.7102527618408203, -0.2401944249868393, 0.5404701232910156];
-      } else {
-        manualRotation = quat.create();
-      }
+      manualRotation = quat.create();
 
       var oldObjURL = videoObjectURL;
       videoObjectURL = null;

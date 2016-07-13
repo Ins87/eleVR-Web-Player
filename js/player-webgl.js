@@ -1,286 +1,314 @@
-var positionsBuffer, verticesIndexBuffer, texture;
 var vrHMD, vrSensor;
-
-/*jshint -W069 */
 
 (function (global) {
   'use strict';
 
-  var webGL = {
-    gl: null,
-    video: null,
-    canvas: null,
+  function PlayerWebGL(video, canvas) {
+    var self = this;
+    this.video = video;
+    this.canvas = canvas;
+    this.gl = null;
+    this.positionsBuffer = null;
+    this.texture = null;
+    this.verticesIndexBuffer = null;
+    this.timing = {
+      showTiming: false, // Switch to true to show frame times in the console
+      frameTime: 0,
+      prevFrameTime: 0,
+      canvasResized: 0,
+      textureLoaded: 0,
+      start: 0,
+      end: 0,
+      framesSinceIssue: 0,
+    };
 
-    initWebGL: function (video, canvas) {
-      webGL.video = video;
-      webGL.canvas = canvas;
-      webGL.gl = null;
+    try {
+      this.gl = getWebGLContext();
+    } catch (e) {
+    }
 
-      try {
-        webGL.gl = webGL.canvas.getContext('webgl') || webGL.canvas.getContext('experimental-webgl');
-      } catch (e) {
+    if (!this.gl) {
+      alert('Unable to initialize WebGL. Your browser may not support it.');
+      return;
+    }
+
+    init();
+
+    function getWebGLContext() {
+      return self.canvas.getContext('webgl') ||
+        self.canvas.getContext('experimental-webgl');
+    }
+
+    function init() {
+      self.gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      self.gl.clearDepth(1.0);
+      self.gl.disable(self.gl.DEPTH_TEST);
+      loadShader();
+    }
+
+    function loadShader() { // Todo extract
+      var params = {
+        fragmentShaderName: 'shader-fs',
+        vertexShaderName: 'shader-vs',
+        attributes: ['aVertexPosition'],
+        uniforms: ['uSampler', 'eye', 'projection', 'proj_inv'],
+      };
+      self.program = self.gl.createProgram();
+
+      self.gl.attachShader(self.program, self.getShaderByName(params.vertexShaderName));
+      self.gl.attachShader(self.program, self.getShaderByName(params.fragmentShaderName));
+      self.gl.linkProgram(self.program);
+
+      if (!self.gl.getProgramParameter(self.program, self.gl.LINK_STATUS)) {
+        alert('Unable to initialize the shader program: ' + self.gl.getProgramInfoLog(self.program));
+        //  Todo return?
       }
 
-      if (!webGL.gl) {
-        alert('Unable to initialize WebGL. Your browser may not support it.');
-      }
-    },
+      self.gl.useProgram(self.program);
 
-    getPhoneVR: function () {
-      if (!webGL.phoneVR) {
-        // Create once and make it a property on the object for easy lookup later.
-        webGL.phoneVR = new PhoneVR();
+      self.attributes = {};
+      for (var i = 0; i < params.attributes.length; i++) {
+        var attributeName = params.attributes[i];
+        self.attributes[attributeName] = self.gl.getAttribLocation(self.program, attributeName);
+        self.gl.enableVertexAttribArray(self.attributes[attributeName]);
       }
 
-      return webGL.phoneVR;
-    },
-
-    initBuffers: function () {
-      positionsBuffer = webGL.gl.createBuffer();
-      webGL.gl.bindBuffer(webGL.gl.ARRAY_BUFFER, positionsBuffer);
-      var positions = [
-        -1.0, -1.0,
-        1.0, -1.0,
-        1.0, 1.0,
-        -1.0, 1.0,
-      ];
-      webGL.gl.bufferData(webGL.gl.ARRAY_BUFFER, new Float32Array(positions), webGL.gl.STATIC_DRAW);
-
-      verticesIndexBuffer = webGL.gl.createBuffer();
-      webGL.gl.bindBuffer(webGL.gl.ELEMENT_ARRAY_BUFFER, verticesIndexBuffer);
-      var vertexIndices = [
-        0, 1, 2, 0, 2, 3,
-      ];
-      webGL.gl.bufferData(webGL.gl.ELEMENT_ARRAY_BUFFER,
-        new Uint16Array(vertexIndices), webGL.gl.STATIC_DRAW);
-    },
-
-    initTextures: function () {
-      texture = webGL.gl.createTexture();
-      webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, texture);
-      webGL.gl.texParameteri(webGL.gl.TEXTURE_2D, webGL.gl.TEXTURE_MAG_FILTER, webGL.gl.LINEAR);
-      webGL.gl.texParameteri(webGL.gl.TEXTURE_2D, webGL.gl.TEXTURE_MIN_FILTER, webGL.gl.LINEAR);
-      webGL.gl.texParameteri(webGL.gl.TEXTURE_2D, webGL.gl.TEXTURE_WRAP_S, webGL.gl.CLAMP_TO_EDGE);
-      webGL.gl.texParameteri(webGL.gl.TEXTURE_2D, webGL.gl.TEXTURE_WRAP_T, webGL.gl.CLAMP_TO_EDGE);
-      webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, null);
-      timing.textureTime = undefined;
-    },
-
-    updateTexture: function () {
-      webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, texture);
-      webGL.gl.pixelStorei(webGL.gl.UNPACK_FLIP_Y_WEBGL, true);
-      webGL.gl.texImage2D(webGL.gl.TEXTURE_2D, 0, webGL.gl.RGB, webGL.gl.RGB,
-        webGL.gl.UNSIGNED_BYTE, webGL.video);
-      webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, null);
-      timing.textureTime = webGL.video.currentTime;
-    },
-
-    /**
-     * Shader Related Functions
-     **/
-    Shader: function (params) {
-      this.params = params;
-      this.fragmentShader = webGL.getShaderByName(this.params.fragmentShaderName);
-      this.vertexShader = webGL.getShaderByName(this.params.vertexShaderName);
-
-      this.program = webGL.gl.createProgram();
-      webGL.gl.attachShader(this.program, this.vertexShader);
-      webGL.gl.attachShader(this.program, this.fragmentShader);
-      webGL.gl.linkProgram(this.program);
-
-      if (!webGL.gl.getProgramParameter(this.program, webGL.gl.LINK_STATUS)) {
-        alert('Unable to initialize the shader program: ' + webGL.gl.getProgramInfoLog(this.program));
+      self.uniforms = {};
+      for (i = 0; i < params.uniforms.length; i++) {
+        var uniformName = params.uniforms[i];
+        self.uniforms[uniformName] = self.gl.getUniformLocation(self.program, uniformName);
+        self.gl.enableVertexAttribArray(self.attributes[uniformName]);
       }
+    }
+  }
 
-      webGL.gl.useProgram(this.program);
+  PlayerWebGL.prototype.drawScene = function drawScene(frameTime) {
+    this.timing.frameTime = frameTime;
+    if (this.timing.showTiming) {
+      this.timing.start = performance.now();
+    }
 
-      this.attributes = {};
-      for (var i = 0; i < this.params.attributes.length; i++) {
-        var attributeName = this.params.attributes[i];
-        this.attributes[attributeName] = webGL.gl.getAttribLocation(this.program, attributeName);
-        webGL.gl.enableVertexAttribArray(this.attributes[attributeName]);
-      }
+    util.setCanvasSize(this.canvas, this.getBackingStorePixelRatio());
 
-      this.uniforms = {};
-      for (i = 0; i < this.params.uniforms.length; i++) {
-        var uniformName = this.params.uniforms[i];
-        this.uniforms[uniformName] = webGL.gl.getUniformLocation(this.program, uniformName);
-        webGL.gl.enableVertexAttribArray(this.attributes[uniformName]);
-      }
-    },
+    if (this.timing.showTiming) {
+      this.timing.canvasResized = performance.now();
+    }
 
-    getShaderByName: function (id) {
-      var shaderScript = document.getElementById(id);
+    this.updateTexture();
 
-      if (!shaderScript) {
-        return null;
-      }
+    if (this.timing.showTiming) {
+      this.timing.textureLoaded = performance.now();
+    }
 
-      var theSource = '';
-      var currentChild = shaderScript.firstChild;
+    if (this.timing.prevFrameTime) {
+      // Apply manual controls.
+      var interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
 
-      while (currentChild) {
-        if (currentChild.nodeType === 3) {
-          theSource += currentChild.textContent;
-        }
+      var update = quat.fromValues(controls.manualRotateRate[0] * interval,
+        controls.manualRotateRate[1] * interval,
+        controls.manualRotateRate[2] * interval, 1.0);
+      quat.normalize(update, update);
+      quat.multiply(manualRotation, manualRotation, update);
+    }
 
-        currentChild = currentChild.nextSibling;
-      }
-
-      var result;
-
-      if (shaderScript.type === 'x-shader/x-fragment') {
-        result = webGL.gl.createShader(webGL.gl.FRAGMENT_SHADER);
-      } else if (shaderScript.type === 'x-shader/x-vertex') {
-        result = webGL.gl.createShader(webGL.gl.VERTEX_SHADER);
+    var perspectiveMatrix = mat4.create();
+    if (typeof vrHMD !== 'undefined') {
+      var leftParams = vrHMD.getEyeParameters('left');
+      var rightParams = vrHMD.getEyeParameters('right');
+      perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(leftParams.recommendedFieldOfView, 0.1, 10);
+      this.drawEye('left', perspectiveMatrix);
+      perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(rightParams.recommendedFieldOfView, 0.1, 10);
+      this.drawEye('right', perspectiveMatrix);
+    } else {
+      var ratio;
+      if (eyesSelect.value === 'one') {
+        ratio = (this.canvas.width) / this.canvas.height;
+        mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
+        this.drawEye('both', perspectiveMatrix);
       } else {
-        return null;  // Unknown shader type
+        ratio = (this.canvas.width / 2) / this.canvas.height;
+        mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
+        this.drawEye('left', perspectiveMatrix);
+        this.drawEye('right', perspectiveMatrix);
       }
+    }
 
-      webGL.gl.shaderSource(result, theSource);
-      webGL.gl.compileShader(result);
-
-      if (!webGL.gl.getShaderParameter(result, webGL.gl.COMPILE_STATUS)) {
-        alert('An error occurred compiling the shaders: ' + webGL.gl.getShaderInfoLog(result));
-        return null;
-      }
-
-      return result;
-    },
-
-    /**
-     * Drawing the scene
-     */
-    drawEye: function (eye, projectionMatrix) {
-      webGL.gl.useProgram(shader.program);
-
-      webGL.gl.bindBuffer(webGL.gl.ARRAY_BUFFER, positionsBuffer);
-      webGL.gl.vertexAttribPointer(shader.attributes['aVertexPosition'], 2, webGL.gl.FLOAT, false, 0, 0);
-
-      // Specify the texture to map onto the faces.
-      webGL.gl.activeTexture(webGL.gl.TEXTURE0);
-      webGL.gl.bindTexture(webGL.gl.TEXTURE_2D, texture);
-      webGL.gl.uniform1i(shader.uniforms['uSampler'], 0);
-
-      webGL.gl.uniform1f(shader.uniforms['eye'], eye === 'right' ? 1 : 0);
-      webGL.gl.uniform1f(shader.uniforms['projection'], projection);
-
-      var rotation = mat4.create();
-      var totalRotation = quat.create();
-
-      if (typeof vrSensor !== 'undefined') {
-        var state = vrSensor.getState();
-        if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' &&
-          state.orientation.x !== 0 &&
-          state.orientation.y !== 0 &&
-          state.orientation.z !== 0 &&
-          state.orientation.w !== 0) {
-          var sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
-          quat.multiply(totalRotation, manualRotation, sensorOrientation);
-        } else {
-          totalRotation = manualRotation;
-        }
-        mat4.fromQuat(rotation, totalRotation);
+    if (this.timing.showTiming) {
+      this.gl.finish();
+      this.timing.end = performance.now();
+      if (this.timing.end - this.timing.frameTime > 20) {
+        console.log(this.timing.framesSinceIssue + ' Frame time: ' +
+          (this.timing.start - this.timing.frameTime) + 'ms animation frame lag + ' +
+          (this.timing.canvasResized - this.timing.start) + 'ms canvas resized + ' +
+          (this.timing.textureLoaded - this.timing.canvasResized) + 'ms to load texture + ' +
+          (this.timing.end - this.timing.textureLoaded) + 'ms = ' + (this.timing.end - this.timing.frameTime) + 'ms');
+        this.timing.framesSinceIssue = 0;
       } else {
-        quat.multiply(totalRotation, manualRotation, webGL.getPhoneVR().rotationQuat());
-        mat4.fromQuat(rotation, totalRotation);
+        this.timing.framesSinceIssue++;
       }
+    }
 
-      var projectionInverse = mat4.create();
-      mat4.invert(projectionInverse, projectionMatrix);
-      var inv = mat4.create();
-      mat4.multiply(inv, rotation, projectionInverse);
-
-      webGL.gl.uniformMatrix4fv(shader.uniforms['proj_inv'], false, inv);
-
-      if (eye === 'left') { // left eye
-        webGL.gl.viewport(0, 0, webGL.canvas.width / 2, webGL.canvas.height);
-      }
-
-      if (eye === 'right') { // right eye
-        webGL.gl.viewport(webGL.canvas.width / 2, 0, webGL.canvas.width / 2, webGL.canvas.height);
-      }
-
-      if (eye === 'both') { // both eyes
-        webGL.gl.viewport(0, 0, webGL.canvas.width, webGL.canvas.height);
-      }
-
-      // Draw
-      webGL.gl.bindBuffer(webGL.gl.ELEMENT_ARRAY_BUFFER, verticesIndexBuffer);
-      webGL.gl.drawElements(webGL.gl.TRIANGLES, 6, webGL.gl.UNSIGNED_SHORT, 0);
-    },
-
-    drawScene: function (frameTime) {
-      timing.frameTime = frameTime;
-      if (timing.showTiming) {
-        timing.start = performance.now();
-      }
-
-      util.setCanvasSize(webGL.canvas);
-
-      if (timing.showTiming) {
-        timing.canvasResized = performance.now();
-      }
-
-      webGL.updateTexture();
-
-      if (timing.showTiming) {
-        timing.textureLoaded = performance.now();
-      }
-
-      if (timing.prevFrameTime) {
-        // Apply manual controls.
-        var interval = (timing.frameTime - timing.prevFrameTime) * 0.001;
-
-        var update = quat.fromValues(controls.manualRotateRate[0] * interval,
-          controls.manualRotateRate[1] * interval,
-          controls.manualRotateRate[2] * interval, 1.0);
-        quat.normalize(update, update);
-        quat.multiply(manualRotation, manualRotation, update);
-      }
-
-      var perspectiveMatrix = mat4.create();
-      if (typeof vrHMD !== 'undefined') {
-        var leftParams = vrHMD.getEyeParameters('left');
-        var rightParams = vrHMD.getEyeParameters('right');
-        perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(leftParams.recommendedFieldOfView, 0.1, 10);
-        webGL.drawEye('left', perspectiveMatrix);
-        perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(rightParams.recommendedFieldOfView, 0.1, 10);
-        webGL.drawEye('right', perspectiveMatrix);
-      } else {
-        var ratio;
-        if (eyesSelect.value === 'one') {
-          ratio = (webGL.canvas.width) / webGL.canvas.height;
-          mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
-          webGL.drawEye('both', perspectiveMatrix);
-        } else {
-          ratio = (webGL.canvas.width / 2) / webGL.canvas.height;
-          mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
-          webGL.drawEye('left', perspectiveMatrix);
-          webGL.drawEye('right', perspectiveMatrix);
-        }
-      }
-
-      if (timing.showTiming) {
-        webGL.gl.finish();
-        timing.end = performance.now();
-        if (timing.end - timing.frameTime > 20) {
-          console.log(timing.framesSinceIssue + ' Frame time: ' +
-            (timing.start - timing.frameTime) + 'ms animation frame lag + ' +
-            (timing.canvasResized - timing.start) + 'ms canvas resized + ' +
-            (timing.textureLoaded - timing.canvasResized) + 'ms to load texture + ' +
-            (timing.end - timing.textureLoaded) + 'ms = ' + (timing.end - timing.frameTime) + 'ms');
-          timing.framesSinceIssue = 0;
-        } else {
-          timing.framesSinceIssue++;
-        }
-      }
-
-      reqAnimFrameID = requestAnimationFrame(webGL.drawScene);
-      timing.prevFrameTime = timing.frameTime;
-    },
+    this.play();
+    this.timing.prevFrameTime = this.timing.frameTime;
   };
 
-  global.webGL = webGL;
+  PlayerWebGL.prototype.drawEye = function drawEye(eye, projectionMatrix) {
+    this.gl.useProgram(this.program);
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
+    this.gl.vertexAttribPointer(this.attributes['aVertexPosition'], 2, this.gl.FLOAT, false, 0, 0);
+
+    // Specify the texture to map onto the faces.
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.uniform1i(this.uniforms['uSampler'], 0);
+
+    this.gl.uniform1f(this.uniforms['eye'], eye === 'right' ? 1 : 0);
+    this.gl.uniform1f(this.uniforms['projection'], projection); // Todo remove global
+
+    var rotation = mat4.create();
+    var totalRotation = quat.create();
+
+    if (typeof vrSensor !== 'undefined') { // Todo remove global
+      var state = vrSensor.getState();
+      if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' &&
+        state.orientation.x !== 0 &&
+        state.orientation.y !== 0 &&
+        state.orientation.z !== 0 &&
+        state.orientation.w !== 0) {
+        var sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
+        quat.multiply(totalRotation, manualRotation, sensorOrientation); // Todo remove global
+      } else {
+        totalRotation = manualRotation; // Todo remove global
+      }
+      mat4.fromQuat(rotation, totalRotation);
+    } else {
+      quat.multiply(totalRotation, manualRotation, PhoneVR.getInstance().rotationQuat()); // Todo remove global
+      mat4.fromQuat(rotation, totalRotation);
+    }
+
+    var projectionInverse = mat4.create();
+    mat4.invert(projectionInverse, projectionMatrix);
+    var inv = mat4.create();
+    mat4.multiply(inv, rotation, projectionInverse);
+
+    this.gl.uniformMatrix4fv(this.uniforms['proj_inv'], false, inv);
+
+    if (eye === 'left') { // left eye
+      this.gl.viewport(0, 0, this.canvas.width / 2, this.canvas.height);
+    }
+
+    if (eye === 'right') { // right eye
+      this.gl.viewport(this.canvas.width / 2, 0, this.canvas.width / 2, this.canvas.height);
+    }
+
+    if (eye === 'both') { // both eyes
+      this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    // Draw
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.verticesIndexBuffer);
+    this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
+  };
+
+  PlayerWebGL.prototype.play = function play() {
+    var self = this;
+    reqAnimFrameID = requestAnimationFrame(function(frameTime) {
+      self.drawScene(frameTime);
+    });
+  };
+
+  PlayerWebGL.prototype.stop = function stop() {
+    cancelAnimationFrame(this.reqAnimFrameID);
+  };
+
+  PlayerWebGL.prototype.getBackingStorePixelRatio = function getBackingStorePixelRatio() {
+    return this.gl.webkitBackingStorePixelRatio ||
+      this.gl.mozBackingStorePixelRatio ||
+      this.gl.msBackingStorePixelRatio ||
+      this.gl.oBackingStorePixelRatio ||
+      this.gl.backingStorePixelRatio || 1;
+  };
+
+  PlayerWebGL.prototype.initBuffers = function initBuffers() {
+    this.positionsBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
+    var positions = [
+      -1.0, -1.0,
+      1.0, -1.0,
+      1.0, 1.0,
+      -1.0, 1.0,
+    ];
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(positions), this.gl.STATIC_DRAW);
+
+    this.verticesIndexBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.verticesIndexBuffer);
+    var vertexIndices = [
+      0, 1, 2, 0, 2, 3,
+    ];
+    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
+      new Uint16Array(vertexIndices), this.gl.STATIC_DRAW);
+  };
+
+  PlayerWebGL.prototype.initTextures = function initTextures() {
+    this.texture = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+  };
+
+  PlayerWebGL.prototype.updateTexture = function updateTexture() {
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGB, this.gl.RGB,
+      this.gl.UNSIGNED_BYTE, this.video);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+  };
+
+
+  PlayerWebGL.prototype.getShaderByName = function getShaderByName(id) {
+    var shaderScript = document.getElementById(id);
+
+    if (!shaderScript) {
+      return null;
+    }
+
+    var theSource = '';
+    var currentChild = shaderScript.firstChild;
+
+    while (currentChild) {
+      if (currentChild.nodeType === 3) {
+        theSource += currentChild.textContent;
+      }
+
+      currentChild = currentChild.nextSibling;
+    }
+
+    var result;
+
+    if (shaderScript.type === 'x-shader/x-fragment') {
+      result = this.gl.createShader(this.gl.FRAGMENT_SHADER);
+    } else if (shaderScript.type === 'x-shader/x-vertex') {
+      result = this.gl.createShader(this.gl.VERTEX_SHADER);
+    } else {
+      return null;  // Unknown shader type
+    }
+
+    this.gl.shaderSource(result, theSource);
+    this.gl.compileShader(result);
+
+    if (!this.gl.getShaderParameter(result, this.gl.COMPILE_STATUS)) {
+      alert('An error occurred compiling the shaders: ' + this.gl.getShaderInfoLog(result));
+      return null;
+    }
+
+    return result;
+  };
+
+
+  global.PlayerWebGL = PlayerWebGL;
 
 })(window);
