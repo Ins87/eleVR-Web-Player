@@ -1,4 +1,4 @@
-/* global fullScreenButton, loopButton, muteButton, playL, playR, playButton, projectionSelect, quat, seekBar, videoSelect, vrSensor */
+/* global fullScreenButton, loopButton, muteButton, playL, playR, playButton, projectionSelect, quat, seekBar, videoSelect */
 
 var reqAnimFrameID = 0;
 var projection = 0;
@@ -55,8 +55,8 @@ var manualRotation = quat.create();
       });
 
       recenterButton.addEventListener('click', function () {
-        if (typeof vrSensor !== 'undefined') {
-          vrSensor.zeroSensor(); // Untested
+        if (!!webVR.getInstance().vrSensor) {
+          webVR.getInstance().vrSensor.zeroSensor(); // Untested
         } else {
           quat.invert(manualRotation, PhoneVR.getInstance().rotationQuat());
         }
@@ -136,10 +136,9 @@ var manualRotation = quat.create();
             controls.fullscreen();
             break;
           case 'z':
-            if (typeof vrSensor !== 'undefined') {
-              vrSensor.zeroSensor();
-            }
-            else {
+            if (!!webVR.getInstance().vrSensor) {
+              webVR.getInstance().vrSensor.zeroSensor();
+            } else {
               quat.invert(manualRotation, PhoneVR.getInstance().rotationQuat());
             }
             break;

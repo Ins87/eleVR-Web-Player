@@ -169,8 +169,8 @@
     var rotation = mat4.create();
     var totalRotation = quat.create();
 
-    if (typeof vrSensor !== 'undefined') { // Todo remove global
-      var state = vrSensor.getState();
+    if (!!webVR.getInstance().vrSensor) {
+      var state = webVR.getInstance().vrSensor.getState();
       if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' &&
         state.orientation.x !== 0 &&
         state.orientation.y !== 0 &&
