@@ -9,7 +9,7 @@ var depFiles = [
 
 var srcFiles = [
   'lib/util.js',
-  'js/controls.js',
+  'js/player-controls.js',
   'js/player-webgl.js',
   'js/webvr.js',
   'js/phonevr.js',

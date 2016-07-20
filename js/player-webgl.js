@@ -7,6 +7,8 @@
     this.canvas = canvas;
     this.gl = null;
     this.positionsBuffer = null;
+    this.projection = 0;
+    this.controls = null;
     this.texture = null;
     this.verticesIndexBuffer = null;
     this.timing = {
@@ -102,11 +104,11 @@
       // Apply manual controls.
       var interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
 
-      var update = quat.fromValues(controls.manualRotateRate[0] * interval,
-        controls.manualRotateRate[1] * interval,
-        controls.manualRotateRate[2] * interval, 1.0);
+      var update = quat.fromValues(this.controls.manualRotateRate[0] * interval,
+        this.controls.manualRotateRate[1] * interval,
+        this.controls.manualRotateRate[2] * interval, 1.0);
       quat.normalize(update, update);
-      quat.multiply(manualRotation, manualRotation, update);
+      quat.multiply(this.controls.manualRotation, this.controls.manualRotation, update);
     }
 
     var perspectiveMatrix = mat4.create();
@@ -121,7 +123,7 @@
       this.drawEye('right', perspectiveMatrix);
     } else {
       var ratio;
-      if (eyesSelect.value === 'one') {
+      if (true) { // Todo eyesSelect.value === 'one') {
         ratio = (this.canvas.width) / this.canvas.height;
         mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
         this.drawEye('both', perspectiveMatrix);
@@ -164,7 +166,7 @@
     this.gl.uniform1i(this.uniforms.uSampler, 0);
 
     this.gl.uniform1f(this.uniforms.eye, eye === 'right' ? 1 : 0);
-    this.gl.uniform1f(this.uniforms.projection, projection); // Todo remove global
+    this.gl.uniform1f(this.uniforms.projection, this.projection);
 
     var rotation = mat4.create();
     var totalRotation = quat.create();
@@ -177,13 +179,13 @@
         state.orientation.z !== 0 &&
         state.orientation.w !== 0) {
         var sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
-        quat.multiply(totalRotation, manualRotation, sensorOrientation); // Todo remove global
+        quat.multiply(totalRotation, this.controls.manualRotation, sensorOrientation);
       } else {
-        totalRotation = manualRotation; // Todo remove global
+        totalRotation = this.controls.manualRotation; // Todo remove global
       }
       mat4.fromQuat(rotation, totalRotation);
     } else {
-      quat.multiply(totalRotation, manualRotation, PhoneVR.getInstance().rotationQuat()); // Todo remove global
+      quat.multiply(totalRotation, this.controls.manualRotation, PhoneVR.getInstance().rotationQuat());
       mat4.fromQuat(rotation, totalRotation);
     }
 
@@ -213,7 +215,7 @@
 
   PlayerWebGL.prototype.play = function play() {
     var self = this;
-    this.reqAnimFrameID = requestAnimationFrame(function(frameTime) {
+    this.reqAnimFrameID = requestAnimationFrame(function (frameTime) {
       self.drawScene(frameTime);
     });
   };
@@ -266,6 +268,27 @@
     this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGB, this.gl.RGB,
       this.gl.UNSIGNED_BYTE, this.video);
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+  };
+
+  PlayerWebGL.prototype.setProjection = function setProjection(projection) {
+    this.projection = getCustomProjection(projection);
+
+    function getCustomProjection(projection) {
+      switch (projection.toLowerCase()) {
+        case 'mono':
+        case '2d':
+        case '0':
+        case 'equirectangular':
+          return 0;
+        // Otherwise, it could be 'stereo', '3d', '1', 'equirectangular 3d', etc.
+        default:
+          return 1;
+      }
+    }
+  };
+
+  PlayerWebGL.prototype.setControls = function setControls(controls) {
+    this.controls = controls;
   };
 
 

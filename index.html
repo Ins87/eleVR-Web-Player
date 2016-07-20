@@ -105,63 +105,13 @@
 
 <body>
 <div id="video-container">
-  <!-- Loading Message -->
-  <div id="left-load" class="left">
-    <div id="title-l" class="title">Loading Video...</div>
-    <div id="message-l" class="message hidden">Try WASD + Q/E</div>
-  </div>
-  <div id="right-load" class="right">
-    <div id="title-r" class="title">Loading Video...</div>
-    <div id="message-r" class="message hidden">Try WASD + Q/E</div>
-  </div>
-  <div id="left-play" class="left hidden">
-    <a id="play-l" class="large-play fa fa-play fa-5x"></a>
-  </div>
-  <div id="right-play" class="right hidden">
-    <a id="play-r" class="large-play fa fa-play fa-5x"></a>
-  </div>
-
   <canvas id="glcanvas">
     Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
   </canvas>
-  <video id="video" class="hidden" preload="auto" loop="true" webkit-playsinline crossOrigin="anonymous">
+  <video id="video" class="hidden" preload="auto" loop="true" webkit-playsinline autoplay crossOrigin="anonymous">
     <source src="therelaxatron2.mp4" type="video/mp4">
     <source src="therelaxatron.webm" type="video/webm">
   </video>
-  <!-- Video Controls -->
-  <div id="video-controls" class="hidden">
-    <a id="play-pause" class="fa fa-play icon" title="Play"></a>
-
-
-    <input type="range" id="seek-bar" value="0">
-
-    <a id="loop" class="fa fa-chain-broken icon" title="Stop Looping"></a>
-
-    <a id="mute" class="fa fa-volume-up icon" title="Mute"></a>
-
-    <a id="recenter" class="fa fa-dot-circle-o icon" title="Recenter"></a>
-
-    <a id="select-local-file" class="fa fa-folder-open icon rfloat" title="Select File"></a>
-
-    <select id="projection-select" class="rfloat">
-      <option value=0>Equirectangular</option>
-      <option value=1>Equirectangular 3D</option>
-    </select>
-
-    <select id="eyes-select" class="rfloat">
-      <option value="one">1</option>
-      <option value="two">2</option>
-    </select>
-
-    <select id="video-select" class="rfloat">
-      <option value="0therelaxatron2.mp4">The Relaxatron (mp4)</option>
-      <option value="0therelaxatron.webm">The Relaxatron (webm)</option>
-      <option value="1Vidcon5.mp4">Vidcon (mp4)</option>
-      <option value="1Vidcon.webm">Vidcon (webm)</option>
-    </select>
-
-    <a id="full-screen" class="fa fa-expand icon rfloat" title="Full Screen"></a>
-  </div>
 
   <script>new EleVRPlayer(document.getElementById('video'), document.getElementById('glcanvas'));</script>
 </div>
