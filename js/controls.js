@@ -1,4 +1,4 @@
-/* global fullScreenButton, loopButton, muteButton, playL, playR, playButton, projectionSelect, quat, seekBar, videoSelect, vrHMD, vrSensor */
+/* global fullScreenButton, loopButton, muteButton, playL, playR, playButton, projectionSelect, quat, seekBar, videoSelect, vrSensor */
 
 var reqAnimFrameID = 0;
 var projection = 0;
@@ -303,9 +303,9 @@ var manualRotation = quat.create();
 
     fullscreen: function () {
       if (controls.canvas.mozRequestFullScreen) {
-        controls.canvas.mozRequestFullScreen({vrDisplay: vrHMD}); // Firefox
+        controls.canvas.mozRequestFullScreen({vrDisplay: webVR.getInstance().vrHMD}); // Firefox
       } else if (controls.canvas.webkitRequestFullscreen) {
-        controls.canvas.webkitRequestFullscreen({vrDisplay: vrHMD}); // Chrome and Safari
+        controls.canvas.webkitRequestFullscreen({vrDisplay: webVR.getInstance().vrHMD}); // Chrome and Safari
       } else if (controls.canvas.requestFullScreen) {
         controls.canvas.requestFullscreen();
       }

@@ -1,5 +1,3 @@
-var vrHMD, vrSensor;
-
 (function (global) {
   'use strict';
 
@@ -112,7 +110,9 @@ var vrHMD, vrSensor;
     }
 
     var perspectiveMatrix = mat4.create();
-    if (typeof vrHMD !== 'undefined') {
+    var vrHMD = webVR.getInstance().vrHMD;
+
+    if (!!vrHMD) {
       var leftParams = vrHMD.getEyeParameters('left');
       var rightParams = vrHMD.getEyeParameters('right');
       perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(leftParams.recommendedFieldOfView, 0.1, 10);
@@ -194,15 +194,15 @@ var vrHMD, vrSensor;
 
     this.gl.uniformMatrix4fv(this.uniforms.proj_inv, false, inv);
 
-    if (eye === 'left') { // left eye
+    if (eye === 'left') { // Left eye
       this.gl.viewport(0, 0, this.canvas.width / 2, this.canvas.height);
     }
 
-    if (eye === 'right') { // right eye
+    if (eye === 'right') { // Right eye
       this.gl.viewport(this.canvas.width / 2, 0, this.canvas.width / 2, this.canvas.height);
     }
 
-    if (eye === 'both') { // both eyes
+    if (eye === 'both') { // Both eyes
       this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
 

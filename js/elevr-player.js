@@ -80,7 +80,6 @@ function EleVRPlayer(sourceVideo, destinationCanvas) {
 
   setupControls(sourceVideo, destinationCanvas);
 
-  webVR.initWebVR();
   this.webGL = new PlayerWebGL(sourceVideo, destinationCanvas);
 
   if (this.webGL.gl) {

@@ -1,42 +1,54 @@
 (function (global) {
   'use strict';
 
-  var webVR = {
+  function WebVr() {
+    var self = this;
 
-    initWebVR: function () {
-      if (navigator.getVRDevices) {
-        navigator.getVRDevices().then(webVR.vrDeviceCallback);
-      }
-    },
+    this.vrHMD = null;
+    this.vrSensor = null;
 
-    vrDeviceCallback: function (vrdevs) {
-      for (var i = 0; i < vrdevs.length; ++i) {
+    if (navigator.getVRDevices) {
+      navigator.getVRDevices().then(webVR.vrDeviceCallback);
+    }
+
+    function vrDeviceCallback(vrdevs) {
+      for (var i = 0; i < vrdevs.length; ++i) { // Todo _.find
         if (vrdevs[i] instanceof HMDVRDevice) {
-          vrHMD = vrdevs[i];
+          self.vrHMD = vrdevs[i];
           break;
         }
       }
 
-      if (!vrHMD) {
+      if (!self.vrHMD) {
         return;
       }
 
       // Then, find that HMD's position sensor
-      for (i = 0; i < vrdevs.length; ++i) {
+      for (i = 0; i < vrdevs.length; ++i) { // Todo _.find
         if (vrdevs[i] instanceof PositionSensorVRDevice &&
-          vrdevs[i].hardwareUnitId === vrHMD.hardwareUnitId) {
-          vrSensor = vrdevs[i];
+          vrdevs[i].hardwareUnitId === self.vrHMD.hardwareUnitId) {
+          self.vrSensor = vrdevs[i];
           break;
         }
       }
 
-      if (!vrSensor) {
+      if (!self.vrSensor) {
         alert('Found an HMD, but didn\'t find its orientation sensor?');
       }
-    },
+    }
+  }
 
-  };
+  global.webVR = (function () {
+    var instance;
 
-  global.webVR = webVR;
+    return {
+      getInstance: function () {
+        if (!instance) {
+          instance = new WebVr();
+        }
+        return instance;
+      },
+    };
+  })();
 
 })(window);
