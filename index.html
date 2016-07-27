@@ -108,12 +108,16 @@
   <canvas id="glcanvas">
     Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
   </canvas>
-  <video id="video" class="hidden" preload="auto" loop="true" webkit-playsinline autoplay crossOrigin="anonymous">
+  <video id="video" class="hidden" preload="auto" loop="true" webkit-playsinline crossOrigin="anonymous">
     <source src="therelaxatron2.mp4" type="video/mp4">
     <source src="therelaxatron.webm" type="video/webm">
   </video>
 
-  <script>new EleVRPlayer(document.getElementById('video'), document.getElementById('glcanvas'));</script>
+  <script>
+    var video = document.getElementById('video');
+    new EleVRPlayer(video, document.getElementById('glcanvas'));
+    video.play();
+  </script>
 </div>
 
 </body>

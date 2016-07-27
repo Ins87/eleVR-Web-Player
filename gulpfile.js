@@ -1,32 +1,40 @@
-var gulp = require('gulp');
-var $ = require('gulp-load-plugins')();
-var _ = require('lodash');
+let gulp = require('gulp');
+let $ = require('gulp-load-plugins')();
+let _ = require('lodash');
+let es = require('event-stream');
 
 
-var depFiles = [
+let depFiles = [
   'node_modules/gl-matrix/dist/gl-matrix-min.js',
 ];
 
-var srcFiles = [
+let srcFiles = [
   'lib/util.js',
+  'js/phonevr.js',
   'js/player-controls.js',
   'js/player-webgl.js',
   'js/webvr.js',
-  'js/phonevr.js',
   'js/elevr-player.js',
 ];
 
-gulp.task('watch', ['build'], function () {
-  gulp.watch(srcFiles, ['build']);
+gulp.task('connect', function () {
+  $.connect.server({
+    root: './',
+    livereload: true,
+  });
+});
+
+gulp.task('watch', ['connect', 'build'], function () {
+  gulp.watch(srcFiles, ['build']); // Todo $.connect.reload
 });
 
 gulp.task('build', function () {
-  var files = _.union(
-    depFiles,
-    srcFiles
-  );
+  let depStream = gulp.src(depFiles, {base: './'});
+  let srcStream = gulp.src(srcFiles).pipe($.babel({
+    presets: ['es2015'],
+  }));
 
-  return gulp.src(files, {base: './'})
+  return es.merge(depStream, srcStream)
     .pipe($.concat('player.js'))
     .pipe(gulp.dest('dist'));
 });
