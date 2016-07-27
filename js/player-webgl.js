@@ -1,6 +1,7 @@
 class PlayerWebGL {
   constructor(video, canvas) {
     var self = this;
+    this.eyeCount = 1;
     this.video = video;
     this.canvas = canvas;
     this.gl = null;
@@ -72,7 +73,7 @@ class PlayerWebGL {
       }
 
       self.uniforms = {};
-      for (i = 0; i < params.uniforms.length; i++) {
+      for (let i = 0; i < params.uniforms.length; i++) {
         let uniformName = params.uniforms[i];
         self.uniforms[uniformName] = self.gl.getUniformLocation(self.program, uniformName);
         self.gl.enableVertexAttribArray(self.attributes[uniformName]);
@@ -121,15 +122,15 @@ class PlayerWebGL {
       this.drawEye('right', perspectiveMatrix);
     } else {
       let ratio;
-      if (true) { // Todo eyesSelect.value === 'one') {
-        ratio = (this.canvas.width) / this.canvas.height;
-        mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
-        this.drawEye('both', perspectiveMatrix);
-      } else {
+      if (this.eyeCount === 2) {
         ratio = (this.canvas.width / 2) / this.canvas.height;
         mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
         this.drawEye('left', perspectiveMatrix);
         this.drawEye('right', perspectiveMatrix);
+      } else {
+        ratio = (this.canvas.width) / this.canvas.height;
+        mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
+        this.drawEye('both', perspectiveMatrix);
       }
     }
 
@@ -288,6 +289,9 @@ class PlayerWebGL {
     this.controls = controls;
   }
 
+  setEyeCount(eyeCount) {
+    this.eyeCount = eyeCount;
+  }
 
   getShaderByName(id) {
     let shaderScript = document.getElementById(id);
@@ -326,5 +330,12 @@ class PlayerWebGL {
     }
 
     return result;
+  }
+
+  destroy() {
+    this.stop();
+    this.video = null;
+    this.canvas = null;
+    this.controls = null;
   }
 }

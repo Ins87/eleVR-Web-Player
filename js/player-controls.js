@@ -4,12 +4,7 @@ class PlayerControls {
     this.canvas = canvas;
     this.manualRotateRate = new Float32Array([0, 0, 0]);  // Vector, camera-relative
     this.manualRotation = quat.create();
-    this.initKeys();
-  }
-
-  initKeys() {
-    let self = this;
-    let manualControls = {
+    this.manualControls = {
       a: {index: 1, sign: 1, active: 0},
       d: {index: 1, sign: -1, active: 0},
       w: {index: 0, sign: 1, active: 0},
@@ -17,17 +12,41 @@ class PlayerControls {
       q: {index: 2, sign: -1, active: 0},
       e: {index: 2, sign: 1, active: 0},
     };
+    this.initKeys();
+  }
 
-    document.addEventListener('keydown', function (event) {
-        key(event, 1);
-      });
-    document.addEventListener('keyup', function (event) {
-        key(event, -1);
-      });
-    window.addEventListener('keypress', onkey, true);
+  initKeys() {
+    this.onKeyPress = this.onKeyPress.bind(this);
+    document.addEventListener('keydown', this.onKeyPress);
+    document.addEventListener('keyup', this.onKeyPress);
+  }
+
+  onKeyPress(event) {
+    let self = this;
+
+    switch (String.fromCharCode(event.charCode)) {
+      case 'z': {
+        resetSensor();
+        break;
+      }
+      default: {
+        key(event, event.type === 'keydown' ? 1 : -1);
+      }
+    }
+
+    function resetSensor() {
+      if (event.type === 'keydown') {
+        return;
+      }
+      if (!!webVR.getInstance().vrSensor) {
+        webVR.getInstance().vrSensor.zeroSensor();
+      } else {
+        quat.invert(self.manualRotation, PhoneVR.getInstance().rotationQuat());
+      }
+    }
 
     function key(event, sign) {
-      let control = manualControls[String.fromCharCode(event.keyCode).toLowerCase()];
+      let control = self.manualControls[String.fromCharCode(event.keyCode).toLowerCase()];
       if (!control) {
         return;
       }
@@ -38,18 +57,13 @@ class PlayerControls {
       control.active = (sign === 1);
       self.manualRotateRate[control.index] += sign * control.sign;
     }
+  }
 
-    function onkey(event) {
-      switch (String.fromCharCode(event.charCode)) {
-        case 'z':
-          if (!!webVR.getInstance().vrSensor) {
-            webVR.getInstance().vrSensor.zeroSensor();
-          } else {
-            quat.invert(self.manualRotation, PhoneVR.getInstance().rotationQuat());
-          }
-          break;
-      }
-    }
+  destroy() {
+    document.removeEventListener('keydown', this.onKeyPress);
+    document.removeEventListener('keyup', this.onKeyPress);
+    this.video = null;
+    this.canvas = null;
   }
 
 }

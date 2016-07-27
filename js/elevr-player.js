@@ -12,23 +12,42 @@
  */
 
 class EleVRPlayer {
-  constructor(sourceVideo, destinationCanvas) {
-    this.webGL = new PlayerWebGL(sourceVideo, destinationCanvas);
+  constructor(sourceVideo) {
+    this.video = sourceVideo;
+    this.canvas = document.createElement('canvas');
+    this.canvas.classList = this.video.classList;
+    this.video.style.display = 'none';
+    this.video.parentNode.insertBefore(this.canvas, this.video);
+
+    this.webGL = new PlayerWebGL(this.video, this.canvas);
 
     if (!this.webGL.gl) {
       return;
     }
 
-    util.setCanvasSize(destinationCanvas, this.webGL.getBackingStorePixelRatio());
+    util.setCanvasSize(this.canvas, this.webGL.getBackingStorePixelRatio());
 
-    this.controls = new PlayerControls(sourceVideo, destinationCanvas);
-    this.webGL.setControls(this.controls); // Todo cleanup on destroy
+    this.controls = new PlayerControls(this.video, this.canvas);
+    this.webGL.setControls(this.controls);
     this.webGL.initBuffers();
     this.webGL.initTextures();
 
-    sourceVideo.addEventListener('canplaythrough', () => {
+    this.video.addEventListener('canplaythrough', () => { //todo destroy
       this.webGL.play();
     });
+
+    this.setEyeCount = (eyeCount) => this.webGL.setEyeCount(eyeCount);
+  }
+
+  destroy() {
+    this.webGL.destroy();
+    this.controls.destroy();
+
+    this.video.parentNode.removeChild(this.canvas);
+    this.canvas = null;
+
+    this.video.style.display = '';
+    this.video = null;
   }
 }
 
