@@ -10,27 +10,26 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
-/* global PlayerWebGL, PlayerControls, util */
 
-'use strict';
+class EleVRPlayer {
+  constructor(sourceVideo, destinationCanvas) {
+    this.webGL = new PlayerWebGL(sourceVideo, destinationCanvas);
 
-function EleVRPlayer(sourceVideo, destinationCanvas) {
-  var self = this;
+    if (!this.webGL.gl) {
+      return;
+    }
 
-  this.webGL = new PlayerWebGL(sourceVideo, destinationCanvas);
+    util.setCanvasSize(destinationCanvas, this.webGL.getBackingStorePixelRatio());
 
-  if (!this.webGL.gl) {
-    return;
+    this.controls = new PlayerControls(sourceVideo, destinationCanvas);
+    this.webGL.setControls(this.controls); // Todo cleanup on destroy
+    this.webGL.initBuffers();
+    this.webGL.initTextures();
+
+    sourceVideo.addEventListener('canplaythrough', () => {
+      this.webGL.play();
+    });
   }
-
-  util.setCanvasSize(destinationCanvas, this.webGL.getBackingStorePixelRatio());
-
-  this.controls = new PlayerControls(sourceVideo, destinationCanvas);
-  this.webGL.setControls(this.controls); // Todo cleanup on destroy
-  this.webGL.initBuffers();
-  this.webGL.initTextures();
-
-  sourceVideo.addEventListener('canplaythrough', function () {
-    self.webGL.play();
-  });
 }
+
+window.EleVRPlayer = EleVRPlayer;

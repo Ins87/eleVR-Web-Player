@@ -1,7 +1,5 @@
-(function (global) {
-  'use strict';
-
-  function PlayerWebGL(video, canvas) {
+class PlayerWebGL {
+  constructor(video, canvas) {
     var self = this;
     this.video = video;
     this.canvas = canvas;
@@ -47,7 +45,7 @@
     }
 
     function loadShader() { // Todo extract
-      var params = {
+      let params = {
         fragmentShaderName: 'shader-fs',
         vertexShaderName: 'shader-vs',
         attributes: ['aVertexPosition'],
@@ -67,22 +65,22 @@
       self.gl.useProgram(self.program);
 
       self.attributes = {};
-      for (var i = 0; i < params.attributes.length; i++) {
-        var attributeName = params.attributes[i];
+      for (let i = 0; i < params.attributes.length; i++) {
+        let attributeName = params.attributes[i];
         self.attributes[attributeName] = self.gl.getAttribLocation(self.program, attributeName);
         self.gl.enableVertexAttribArray(self.attributes[attributeName]);
       }
 
       self.uniforms = {};
       for (i = 0; i < params.uniforms.length; i++) {
-        var uniformName = params.uniforms[i];
+        let uniformName = params.uniforms[i];
         self.uniforms[uniformName] = self.gl.getUniformLocation(self.program, uniformName);
         self.gl.enableVertexAttribArray(self.attributes[uniformName]);
       }
     }
   }
 
-  PlayerWebGL.prototype.drawScene = function drawScene(frameTime) {
+  drawScene(frameTime) {
     this.timing.frameTime = frameTime;
     if (this.timing.showTiming) {
       this.timing.start = performance.now();
@@ -102,27 +100,27 @@
 
     if (this.timing.prevFrameTime) {
       // Apply manual controls.
-      var interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
+      let interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
 
-      var update = quat.fromValues(this.controls.manualRotateRate[0] * interval,
+      let update = quat.fromValues(this.controls.manualRotateRate[0] * interval,
         this.controls.manualRotateRate[1] * interval,
         this.controls.manualRotateRate[2] * interval, 1.0);
       quat.normalize(update, update);
       quat.multiply(this.controls.manualRotation, this.controls.manualRotation, update);
     }
 
-    var perspectiveMatrix = mat4.create();
-    var vrHMD = webVR.getInstance().vrHMD;
+    let perspectiveMatrix = mat4.create();
+    let vrHMD = webVR.getInstance().vrHMD;
 
     if (!!vrHMD) {
-      var leftParams = vrHMD.getEyeParameters('left');
-      var rightParams = vrHMD.getEyeParameters('right');
+      let leftParams = vrHMD.getEyeParameters('left');
+      let rightParams = vrHMD.getEyeParameters('right');
       perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(leftParams.recommendedFieldOfView, 0.1, 10);
       this.drawEye('left', perspectiveMatrix);
       perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(rightParams.recommendedFieldOfView, 0.1, 10);
       this.drawEye('right', perspectiveMatrix);
     } else {
-      var ratio;
+      let ratio;
       if (true) { // Todo eyesSelect.value === 'one') {
         ratio = (this.canvas.width) / this.canvas.height;
         mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
@@ -152,9 +150,9 @@
 
     this.play();
     this.timing.prevFrameTime = this.timing.frameTime;
-  };
+  }
 
-  PlayerWebGL.prototype.drawEye = function drawEye(eye, projectionMatrix) {
+  drawEye(eye, projectionMatrix) {
     this.gl.useProgram(this.program);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
@@ -168,17 +166,17 @@
     this.gl.uniform1f(this.uniforms.eye, eye === 'right' ? 1 : 0);
     this.gl.uniform1f(this.uniforms.projection, this.projection);
 
-    var rotation = mat4.create();
-    var totalRotation = quat.create();
+    let rotation = mat4.create();
+    let totalRotation = quat.create();
 
     if (!!webVR.getInstance().vrSensor) {
-      var state = webVR.getInstance().vrSensor.getState();
+      let state = webVR.getInstance().vrSensor.getState();
       if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' &&
         state.orientation.x !== 0 &&
         state.orientation.y !== 0 &&
         state.orientation.z !== 0 &&
         state.orientation.w !== 0) {
-        var sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
+        let sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
         quat.multiply(totalRotation, this.controls.manualRotation, sensorOrientation);
       } else {
         totalRotation = this.controls.manualRotation; // Todo remove global
@@ -189,9 +187,9 @@
       mat4.fromQuat(rotation, totalRotation);
     }
 
-    var projectionInverse = mat4.create();
+    let projectionInverse = mat4.create();
     mat4.invert(projectionInverse, projectionMatrix);
-    var inv = mat4.create();
+    let inv = mat4.create();
     mat4.multiply(inv, rotation, projectionInverse);
 
     this.gl.uniformMatrix4fv(this.uniforms.proj_inv, false, inv);
@@ -211,31 +209,30 @@
     // Draw
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.verticesIndexBuffer);
     this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
-  };
+  }
 
-  PlayerWebGL.prototype.play = function play() {
-    var self = this;
-    this.reqAnimFrameID = requestAnimationFrame(function (frameTime) {
-      self.drawScene(frameTime);
+  play() {
+    this.reqAnimFrameID = requestAnimationFrame((frameTime) => {
+      this.drawScene(frameTime);
     });
-  };
+  }
 
-  PlayerWebGL.prototype.stop = function stop() {
+  stop() {
     cancelAnimationFrame(this.reqAnimFrameID);
-  };
+  }
 
-  PlayerWebGL.prototype.getBackingStorePixelRatio = function getBackingStorePixelRatio() {
+  getBackingStorePixelRatio() {
     return this.gl.webkitBackingStorePixelRatio ||
       this.gl.mozBackingStorePixelRatio ||
       this.gl.msBackingStorePixelRatio ||
       this.gl.oBackingStorePixelRatio ||
       this.gl.backingStorePixelRatio || 1;
-  };
+  }
 
-  PlayerWebGL.prototype.initBuffers = function initBuffers() {
+  initBuffers() {
     this.positionsBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
-    var positions = [
+    let positions = [
       -1.0, -1.0,
       1.0, -1.0,
       1.0, 1.0,
@@ -245,14 +242,14 @@
 
     this.verticesIndexBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.verticesIndexBuffer);
-    var vertexIndices = [
+    let vertexIndices = [
       0, 1, 2, 0, 2, 3,
     ];
     this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
       new Uint16Array(vertexIndices), this.gl.STATIC_DRAW);
-  };
+  }
 
-  PlayerWebGL.prototype.initTextures = function initTextures() {
+  initTextures() {
     this.texture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
@@ -260,17 +257,17 @@
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-  };
+  }
 
-  PlayerWebGL.prototype.updateTexture = function updateTexture() {
+  updateTexture() {
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGB, this.gl.RGB,
       this.gl.UNSIGNED_BYTE, this.video);
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-  };
+  }
 
-  PlayerWebGL.prototype.setProjection = function setProjection(projection) {
+  setProjection(projection) {
     this.projection = getCustomProjection(projection);
 
     function getCustomProjection(projection) {
@@ -285,22 +282,22 @@
           return 1;
       }
     }
-  };
+  }
 
-  PlayerWebGL.prototype.setControls = function setControls(controls) {
+  setControls(controls) {
     this.controls = controls;
-  };
+  }
 
 
-  PlayerWebGL.prototype.getShaderByName = function getShaderByName(id) {
-    var shaderScript = document.getElementById(id);
+  getShaderByName(id) {
+    let shaderScript = document.getElementById(id);
 
     if (!shaderScript) {
       return null;
     }
 
-    var theSource = '';
-    var currentChild = shaderScript.firstChild;
+    let theSource = '';
+    let currentChild = shaderScript.firstChild;
 
     while (currentChild) {
       if (currentChild.nodeType === 3) {
@@ -310,7 +307,7 @@
       currentChild = currentChild.nextSibling;
     }
 
-    var result;
+    let result;
 
     if (shaderScript.type === 'x-shader/x-fragment') {
       result = this.gl.createShader(this.gl.FRAGMENT_SHADER);
@@ -329,9 +326,5 @@
     }
 
     return result;
-  };
-
-
-  global.PlayerWebGL = PlayerWebGL;
-
-})(window);
+  }
+}
