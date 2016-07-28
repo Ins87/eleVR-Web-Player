@@ -103,14 +103,18 @@ class PlayerWebGL {
       // Apply manual controls.
       let interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
 
-      let update = quat.fromValues(
-        this.controls.manualRotateRate[0] * interval,
-        this.controls.manualRotateRate[1] * interval,
-        this.controls.manualRotateRate[2] * interval,
-        1.0
-      );
-      quat.normalize(update, update);
-      quat.multiply(this.controls.manualRotation, this.controls.manualRotation, update);
+      this.controls.latlong[0] += this.controls.manualRotateRate[0] * interval * 90;
+      this.controls.latlong[1] += this.controls.manualRotateRate[1] * interval * 90;
+
+      var ratio = Math.PI / 180 / 2;
+      var yaw = quat.fromValues(Math.cos(ratio * this.controls.latlong[1]), 0, -Math.sin(ratio * this.controls.latlong[1]), 0);
+      var pitch = quat.fromValues(Math.cos(ratio * this.controls.latlong[0]), 0, 0, -Math.sin(ratio * this.controls.latlong[0]));
+
+      // this works but then the originRotation is not applied
+      quat.multiply(this.controls.manualRotation, yaw, pitch);
+
+      // FIXME: trying to do quat.multiply with originRotation (to apply original offset)
+      // literally makes the world spin; need to get latlong from originRotation
     }
 
     let perspectiveMatrix = mat4.create();
@@ -157,6 +161,7 @@ class PlayerWebGL {
   }
 
   drawEye(eye, projectionMatrix) {
+    let self = this;
     this.gl.useProgram(this.program);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
@@ -171,25 +176,8 @@ class PlayerWebGL {
     this.gl.uniform1f(this.uniforms.projection, this.projection);
 
     let rotation = mat4.create();
-    let totalRotation = quat.create();
-
-    if (!!webVR.getInstance().vrSensor) {
-      let state = webVR.getInstance().vrSensor.getState();
-      if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' &&
-        state.orientation.x !== 0 &&
-        state.orientation.y !== 0 &&
-        state.orientation.z !== 0 &&
-        state.orientation.w !== 0) {
-        let sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
-        quat.multiply(totalRotation, this.controls.manualRotation, sensorOrientation);
-      } else {
-        totalRotation = this.controls.manualRotation;
-      }
-      mat4.fromQuat(rotation, totalRotation);
-    } else {
-      quat.multiply(totalRotation, this.controls.manualRotation, PhoneVR.getInstance().rotationQuat());
-      mat4.fromQuat(rotation, totalRotation);
-    }
+    let totalRotation = getTotalRotation();
+    mat4.fromQuat(rotation, totalRotation);
 
     let projectionInverse = mat4.create();
     mat4.invert(projectionInverse, projectionMatrix);
@@ -213,6 +201,27 @@ class PlayerWebGL {
     // Draw
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.verticesIndexBuffer);
     this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
+
+    function getTotalRotation() {
+      let totalRotation = quat.create();
+      let sensorOrientation = quat.create();
+
+      if (!!webVR.getInstance().vrSensor) {
+        let state = webVR.getInstance().vrSensor.getState();
+        if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' &&
+          state.orientation.x !== 0 &&
+          state.orientation.y !== 0 &&
+          state.orientation.z !== 0 &&
+          state.orientation.w !== 0) {
+          sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
+        }
+      } else {
+        sensorOrientation = PhoneVR.getInstance().rotationQuat();
+      }
+      quat.multiply(totalRotation, self.controls.manualRotation, sensorOrientation);
+
+      return totalRotation;
+    }
   }
 
   play() {

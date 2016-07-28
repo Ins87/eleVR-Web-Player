@@ -3,16 +3,23 @@ class PlayerControls {
     this.video = video;
     this.canvas = canvas;
     this.manualRotateRate = new Float32Array([0, 0, 0]);  // Vector, camera-relative
+    this.latlong = getLatlong();
     this.manualRotation = quat.create();
     this.manualControls = {
       a: {index: 1, sign: 1, active: 0},
       d: {index: 1, sign: -1, active: 0},
       w: {index: 0, sign: 1, active: 0},
-      s: {index: 0, sign: -1, active: 0},
-      q: {index: 2, sign: -1, active: 0},
-      e: {index: 2, sign: 1, active: 0},
+      s: {index: 0, sign: -1, active: 0}
     };
     this.initKeys();
+
+    function getLatlong() {
+      let originRotation = quat.create();
+      let latlong = new Float32Array([0, 0, 0]);
+      latlong[0] = Math.asin(2 * (originRotation[0] * originRotation[2] - originRotation[1] * originRotation[3])) * 180 / Math.PI;
+      latlong[1] = Math.atan2(2 * (originRotation[0] * originRotation[1] + originRotation[2] * originRotation[3]), 1 - 2 * (originRotation[1] * originRotation[1] + originRotation[2] * originRotation[2])) * 180 / Math.PI;
+      return latlong;
+    }
   }
 
   initKeys() {
