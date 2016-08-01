@@ -238,16 +238,23 @@ var PlayerControls = function () {
     this.video = video;
     this.canvas = canvas;
     this.manualRotateRate = new Float32Array([0, 0, 0]); // Vector, camera-relative
+    this.latlong = getLatlong();
     this.manualRotation = quat.create();
     this.manualControls = {
       a: { index: 1, sign: 1, active: 0 },
       d: { index: 1, sign: -1, active: 0 },
       w: { index: 0, sign: 1, active: 0 },
-      s: { index: 0, sign: -1, active: 0 },
-      q: { index: 2, sign: -1, active: 0 },
-      e: { index: 2, sign: 1, active: 0 }
+      s: { index: 0, sign: -1, active: 0 }
     };
     this.initKeys();
+
+    function getLatlong() {
+      var originRotation = quat.create();
+      var latlong = new Float32Array([0, 0, 0]);
+      latlong[0] = Math.asin(2 * (originRotation[0] * originRotation[2] - originRotation[1] * originRotation[3])) * 180 / Math.PI;
+      latlong[1] = Math.atan2(2 * (originRotation[0] * originRotation[1] + originRotation[2] * originRotation[3]), 1 - 2 * (originRotation[1] * originRotation[1] + originRotation[2] * originRotation[2])) * 180 / Math.PI;
+      return latlong;
+    }
   }
 
   _createClass(PlayerControls, [{
@@ -458,9 +465,18 @@ var PlayerWebGL = function () {
         // Apply manual controls.
         var interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
 
-        var update = quat.fromValues(this.controls.manualRotateRate[0] * interval, this.controls.manualRotateRate[1] * interval, this.controls.manualRotateRate[2] * interval, 1.0);
-        quat.normalize(update, update);
-        quat.multiply(this.controls.manualRotation, this.controls.manualRotation, update);
+        this.controls.latlong[0] += this.controls.manualRotateRate[0] * interval * 90;
+        this.controls.latlong[1] += this.controls.manualRotateRate[1] * interval * 90;
+
+        var ratio = Math.PI / 180 / 2;
+        var yaw = quat.fromValues(Math.cos(ratio * this.controls.latlong[1]), 0, -Math.sin(ratio * this.controls.latlong[1]), 0);
+        var pitch = quat.fromValues(Math.cos(ratio * this.controls.latlong[0]), 0, 0, -Math.sin(ratio * this.controls.latlong[0]));
+
+        // this works but then the originRotation is not applied
+        quat.multiply(this.controls.manualRotation, yaw, pitch);
+
+        // FIXME: trying to do quat.multiply with originRotation (to apply original offset)
+        // literally makes the world spin; need to get latlong from originRotation
       }
 
       var perspectiveMatrix = mat4.create();
@@ -474,15 +490,15 @@ var PlayerWebGL = function () {
         perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(rightParams.recommendedFieldOfView, 0.1, 10);
         this.drawEye('right', perspectiveMatrix);
       } else {
-        var ratio = void 0;
+        var _ratio = void 0;
         if (this.eyeCount === 2) {
-          ratio = this.canvas.width / 2 / this.canvas.height;
-          mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
+          _ratio = this.canvas.width / 2 / this.canvas.height;
+          mat4.perspective(perspectiveMatrix, Math.PI / 2, _ratio, 0.1, 10);
           this.drawEye('left', perspectiveMatrix);
           this.drawEye('right', perspectiveMatrix);
         } else {
-          ratio = this.canvas.width / this.canvas.height;
-          mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
+          _ratio = this.canvas.width / this.canvas.height;
+          mat4.perspective(perspectiveMatrix, Math.PI / 2, _ratio, 0.1, 10);
           this.drawEye('both', perspectiveMatrix);
         }
       }
@@ -504,6 +520,7 @@ var PlayerWebGL = function () {
   }, {
     key: 'drawEye',
     value: function drawEye(eye, projectionMatrix) {
+      var self = this;
       this.gl.useProgram(this.program);
 
       this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
@@ -518,21 +535,8 @@ var PlayerWebGL = function () {
       this.gl.uniform1f(this.uniforms.projection, this.projection);
 
       var rotation = mat4.create();
-      var totalRotation = quat.create();
-
-      if (!!webVR.getInstance().vrSensor) {
-        var state = webVR.getInstance().vrSensor.getState();
-        if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' && state.orientation.x !== 0 && state.orientation.y !== 0 && state.orientation.z !== 0 && state.orientation.w !== 0) {
-          var sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
-          quat.multiply(totalRotation, this.controls.manualRotation, sensorOrientation);
-        } else {
-          totalRotation = this.controls.manualRotation;
-        }
-        mat4.fromQuat(rotation, totalRotation);
-      } else {
-        quat.multiply(totalRotation, this.controls.manualRotation, PhoneVR.getInstance().rotationQuat());
-        mat4.fromQuat(rotation, totalRotation);
-      }
+      var totalRotation = getTotalRotation();
+      mat4.fromQuat(rotation, totalRotation);
 
       var projectionInverse = mat4.create();
       mat4.invert(projectionInverse, projectionMatrix);
@@ -559,6 +563,23 @@ var PlayerWebGL = function () {
       // Draw
       this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.verticesIndexBuffer);
       this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
+
+      function getTotalRotation() {
+        var totalRotation = quat.create();
+        var sensorOrientation = quat.create();
+
+        if (!!webVR.getInstance().vrSensor) {
+          var state = webVR.getInstance().vrSensor.getState();
+          if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' && state.orientation.x !== 0 && state.orientation.y !== 0 && state.orientation.z !== 0 && state.orientation.w !== 0) {
+            sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
+          }
+        } else {
+          sensorOrientation = PhoneVR.getInstance().rotationQuat();
+        }
+        quat.multiply(totalRotation, self.controls.manualRotation, sensorOrientation);
+
+        return totalRotation;
+      }
     }
   }, {
     key: 'play',
@@ -770,59 +791,59 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  */
 
 var EleVRPlayer = function () {
-    function EleVRPlayer(sourceVideo) {
-        var _this = this;
+  function EleVRPlayer(sourceVideo) {
+    var _this = this;
 
-        _classCallCheck(this, EleVRPlayer);
+    _classCallCheck(this, EleVRPlayer);
 
-        this.video = sourceVideo;
-        this.canvas = document.createElement('canvas');
-        this.canvas.classList = this.video.classList;
-        this.video.style.display = 'none';
-        this.video.parentNode.insertBefore(this.canvas, this.video);
+    this.video = sourceVideo;
+    this.canvas = document.createElement('canvas');
+    this.canvas.classList = this.video.classList;
+    this.video.style.display = 'none';
+    this.video.parentNode.insertBefore(this.canvas, this.video);
 
-        this.webGL = new PlayerWebGL(this.video, this.canvas);
+    this.webGL = new PlayerWebGL(this.video, this.canvas);
 
-        if (!this.webGL.gl) {
-            return;
-        }
-
-        util.setCanvasSize(this.canvas, this.webGL.getBackingStorePixelRatio());
-
-        this.controls = new PlayerControls(this.video, this.canvas);
-        this.webGL.setControls(this.controls);
-        this.webGL.initBuffers();
-        this.webGL.initTextures();
-
-        this.start = this.start.bind(this);
-        this.video.addEventListener('canplaythrough', this.start);
-
-        this.setEyeCount = function (eyeCount) {
-            return _this.webGL.setEyeCount(eyeCount);
-        };
+    if (!this.webGL.gl) {
+      return;
     }
 
-    _createClass(EleVRPlayer, [{
-        key: 'start',
-        value: function start() {
-            this.webGL.play();
-        }
-    }, {
-        key: 'destroy',
-        value: function destroy() {
-            this.webGL.destroy();
-            this.controls.destroy();
+    util.setCanvasSize(this.canvas, this.webGL.getBackingStorePixelRatio());
 
-            this.video.removeEventListener('canplaythrough', this.start);
-            this.video.parentNode.removeChild(this.canvas);
-            this.canvas = null;
+    this.controls = new PlayerControls(this.video, this.canvas);
+    this.webGL.setControls(this.controls);
+    this.webGL.initBuffers();
+    this.webGL.initTextures();
 
-            this.video.style.display = '';
-            this.video = null;
-        }
-    }]);
+    this.start = this.start.bind(this);
+    this.video.addEventListener('canplaythrough', this.start);
 
-    return EleVRPlayer;
+    this.setEyeCount = function (eyeCount) {
+      return _this.webGL.setEyeCount(eyeCount);
+    };
+  }
+
+  _createClass(EleVRPlayer, [{
+    key: 'start',
+    value: function start() {
+      this.webGL.play();
+    }
+  }, {
+    key: 'destroy',
+    value: function destroy() {
+      this.webGL.destroy();
+      this.controls.destroy();
+
+      this.video.removeEventListener('canplaythrough', this.start);
+      this.video.parentNode.removeChild(this.canvas);
+      this.canvas = null;
+
+      this.video.style.display = '';
+      this.video = null;
+    }
+  }]);
+
+  return EleVRPlayer;
 }();
 
 window.EleVRPlayer = EleVRPlayer;
