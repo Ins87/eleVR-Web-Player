@@ -36,6 +36,9 @@ gulp.task('build', function () {
   }));
 
   return es.merge(depStream, srcStream)
-    .pipe($.concat('player.js'))
+    .pipe($.sourcemaps.init())
+    .pipe($.concat('player.min.js'))
+    .pipe($.uglify())
+    .pipe($.sourcemaps.write('.'))
     .pipe(gulp.dest('dist'));
 });
