@@ -19,6 +19,39 @@ class PlayerControls {
     this.onKeyPress = this.onKeyPress.bind(this);
     document.addEventListener('keydown', this.onKeyPress);
     document.addEventListener('keyup', this.onKeyPress);
+
+    let self = this;
+    let startX, startY;
+
+    function downClbk(e) {
+      self.canvas.addEventListener('mousemove', moveClbk);
+      startX = e.clientX;
+      startY = e.clientY;
+    }
+
+    function upClbk(e) {
+      self.canvas.removeEventListener('mousemove', moveClbk);
+      self.manualRotateRate[0] = 0;
+      self.manualRotateRate[1] = 0;
+      self.manualRotateRate[2] = 0;
+    }
+
+    function moveClbk(e) {
+      let delX = e.clientX - startX;
+      let delY = e.clientY - startY;
+      let width = self.canvas.width,
+        height = self.canvas.height,
+        min = Math.min(width, height);
+
+      self.manualRotateRate[0] += -delY * 2 / min;
+      self.manualRotateRate[1] += -delX * 2 / min;
+
+      startX = e.clientX;
+      startY = e.clientY;
+    }
+
+    self.canvas.addEventListener('mousedown', downClbk);
+    self.canvas.addEventListener('mouseup', upClbk);
   }
 
   onKeyPress(event) {

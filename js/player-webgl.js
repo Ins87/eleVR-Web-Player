@@ -103,9 +103,12 @@ class PlayerWebGL {
       // Apply manual controls.
       let interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
 
-      let update = quat.fromValues(this.controls.manualRotateRate[0] * interval,
+      let update = quat.fromValues(
+        this.controls.manualRotateRate[0] * interval,
         this.controls.manualRotateRate[1] * interval,
-        this.controls.manualRotateRate[2] * interval, 1.0);
+        this.controls.manualRotateRate[2] * interval,
+        1.0
+      );
       quat.normalize(update, update);
       quat.multiply(this.controls.manualRotation, this.controls.manualRotation, update);
     }
@@ -180,7 +183,7 @@ class PlayerWebGL {
         let sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
         quat.multiply(totalRotation, this.controls.manualRotation, sensorOrientation);
       } else {
-        totalRotation = this.controls.manualRotation; // Todo remove global
+        totalRotation = this.controls.manualRotation;
       }
       mat4.fromQuat(rotation, totalRotation);
     } else {
