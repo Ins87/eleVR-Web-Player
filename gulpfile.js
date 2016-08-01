@@ -9,6 +9,7 @@ let depFiles = [
 ];
 
 let srcFiles = [
+  'shaders/**/*.js',
   'lib/util.js',
   'js/phonevr.js',
   'js/player-controls.js',
