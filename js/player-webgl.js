@@ -47,15 +47,15 @@ class PlayerWebGL {
 
     function loadShader() { // Todo extract
       let params = {
-        fragmentShaderName: 'shader-fs',
-        vertexShaderName: 'shader-vs',
+        fragmentShaderName: 'fs',
+        vertexShaderName: 'vs',
         attributes: ['aVertexPosition'],
         uniforms: ['uSampler', 'eye', 'projection', 'proj_inv'],
       };
       self.program = self.gl.createProgram();
 
-      self.gl.attachShader(self.program, self.getShaderByName(params.vertexShaderName));
-      self.gl.attachShader(self.program, self.getShaderByName(params.fragmentShaderName));
+      self.gl.attachShader(self.program, self.getShaderByName(params.vertexShaderName, 'x-vertex'));
+      self.gl.attachShader(self.program, self.getShaderByName(params.fragmentShaderName, 'x-fragment'));
       self.gl.linkProgram(self.program);
 
       if (!self.gl.getProgramParameter(self.program, self.gl.LINK_STATUS)) {
@@ -305,29 +305,18 @@ class PlayerWebGL {
     this.eyeCount = eyeCount;
   }
 
-  getShaderByName(id) {
-    let shaderScript = document.getElementById(id);
+  getShaderByName(name, type) {
+    let result = '';
 
-    if (!shaderScript) {
+    if (!window.shader || !window.shader[name]) {
       return null;
     }
 
-    let theSource = '';
-    let currentChild = shaderScript.firstChild;
+    let theSource = window.shader[name];
 
-    while (currentChild) {
-      if (currentChild.nodeType === 3) {
-        theSource += currentChild.textContent;
-      }
-
-      currentChild = currentChild.nextSibling;
-    }
-
-    let result;
-
-    if (shaderScript.type === 'x-shader/x-fragment') {
+    if (type === 'x-fragment') {
       result = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-    } else if (shaderScript.type === 'x-shader/x-vertex') {
+    } else if (type === 'x-vertex') {
       result = this.gl.createShader(this.gl.VERTEX_SHADER);
     } else {
       return null;  // Unknown shader type
