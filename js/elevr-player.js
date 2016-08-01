@@ -16,6 +16,8 @@ class EleVRPlayer {
     this.video = sourceVideo;
     this.canvas = document.createElement('canvas');
     this.canvas.classList = this.video.classList;
+    this.canvas.classList.add('elevr');
+
     this.video.style.display = 'none';
     this.video.parentNode.insertBefore(this.canvas, this.video);
 
