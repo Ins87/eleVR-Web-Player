@@ -2,7 +2,7 @@
   "name": "ele-vr-web-player",
   "version": "1.0.0",
   "description": "eleVR Web Player\r ================",
-  "main": "index.js",
+  "main": "dist/player.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
