@@ -33,22 +33,14 @@ class EleVRPlayer {
     this.webGL.setControls(this.controls);
     this.webGL.initBuffers();
     this.webGL.initTextures();
-
-    this.start = this.start.bind(this);
-    this.video.addEventListener('canplaythrough', this.start);
-
-    this.setEyeCount = (eyeCount) => this.webGL.setEyeCount(eyeCount);
-  }
-
-  start() {
     this.webGL.play();
+    this.setEyeCount = (eyeCount) => this.webGL.setEyeCount(eyeCount);
   }
 
   destroy() {
     this.webGL.destroy();
     this.controls.destroy();
 
-    this.video.removeEventListener('canplaythrough', this.start);
     this.video.parentNode.removeChild(this.canvas);
     this.canvas = null;
 
