@@ -1,0 +1,18 @@
+{
+  "name": "ele-vr-web-player",
+  "description": "eleVR Web Player",
+  "main": "dist/player.min.js",
+  "authors": [
+    "hawksley (https://github.com/hawksley)"
+  ],
+  "license": "MPL",
+  "homepage": "https://github.com/Ins87/eleVR-Web-Player",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

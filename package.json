@@ -1,7 +1,7 @@
 {
   "name": "ele-vr-web-player",
   "version": "1.0.0",
-  "description": "eleVR Web Player\r ================",
+  "description": "eleVR Web Player",
   "main": "dist/player.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,6 +16,7 @@
     "url": "https://github.com/hawksley/eleVR-Web-Player/issues"
   },
   "homepage": "https://github.com/hawksley/eleVR-Web-Player#readme",
+  "private": true,
   "dependencies": {
     "gl-matrix": "^2.3.2"
   },
