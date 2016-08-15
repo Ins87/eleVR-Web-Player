@@ -1,7 +1,7 @@
 class PlayerControls {
-  constructor(video, canvas) {
-    this.video = video;
+  constructor(canvas, controlLayer) {
     this.canvas = canvas;
+    this.controlLayer = controlLayer ? controlLayer : canvas;
     this.manualRotateRate = new Float32Array([0, 0, 0]);  // Vector, camera-relative
     this.latlong = getLatlong();
     this.manualRotation = quat.create();
@@ -36,18 +36,18 @@ class PlayerControls {
     document.addEventListener('keydown', this.onKeyPress);
     document.addEventListener('keyup', this.onKeyPress);
     document.addEventListener('mouseup', this.onMouseUp);
-    this.canvas.addEventListener('mousedown', this.onMouseDown);
+    this.controlLayer.addEventListener('mousedown', this.onMouseDown);
   }
 
   onMouseDown(e) {
-    this.canvas.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mousemove', this.onMouseMove);
     this.mouseMove.X = e.clientX;
     this.mouseMove.y = e.clientY;
     e.preventDefault();
   }
 
   onMouseUp() {
-    this.canvas.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mousemove', this.onMouseMove);
     this.manualRotateRate = quat.create();
   }
 
@@ -105,9 +105,9 @@ class PlayerControls {
     document.removeEventListener('keydown', this.onKeyPress);
     document.removeEventListener('keyup', this.onKeyPress);
     document.removeEventListener('mouseup', this.onMouseUp);
-    this.canvas.removeEventListener('mousedown', this.onMouseDown);
-    this.canvas.removeEventListener('mousemove', this.onMouseMove);
-    this.video = null;
+    document.removeEventListener('mousemove', this.onMouseMove);
+    this.controlLayer.removeEventListener('mousedown', this.onMouseDown);
+    this.controlLayer = null;
     this.canvas = null;
   }
 

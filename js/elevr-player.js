@@ -12,7 +12,7 @@
  */
 
 class EleVRPlayer {
-  constructor(sourceVideo) {
+  constructor(sourceVideo, options = {}) {
     this.video = sourceVideo;
     this.canvas = document.createElement('canvas');
     this.canvas.classList = this.video.classList;
@@ -29,7 +29,7 @@ class EleVRPlayer {
 
     util.setCanvasSize(this.canvas, this.webGL.getBackingStorePixelRatio());
 
-    this.controls = new PlayerControls(this.video, this.canvas);
+    this.controls = new PlayerControls(this.canvas, options.controlLayer);
     this.webGL.setControls(this.controls);
     this.webGL.initBuffers();
     this.webGL.initTextures();
