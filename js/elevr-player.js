@@ -17,10 +17,9 @@ class EleVRPlayer {
     this.canvas = document.createElement('canvas');
     this.canvas.classList = this.video.classList;
     this.canvas.classList.add('elevr');
+    this.canvas.style.display = 'none';
 
-    this.video.style.display = 'none';
     this.video.parentNode.insertBefore(this.canvas, this.video);
-
     this.webGL = new PlayerWebGL(this.video, this.canvas);
 
     if (!this.webGL.gl) {
@@ -42,6 +41,8 @@ class EleVRPlayer {
 
   start() {
     this.webGL.play();
+    this.canvas.style.display = '';
+    this.video.style.display = 'none';
   }
 
   destroy() {
