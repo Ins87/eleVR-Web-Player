@@ -43,6 +43,7 @@ class PlayerControls {
     this.canvas.addEventListener('mousemove', this.onMouseMove);
     this.mouseMove.X = e.clientX;
     this.mouseMove.y = e.clientY;
+    e.preventDefault();
   }
 
   onMouseUp() {
