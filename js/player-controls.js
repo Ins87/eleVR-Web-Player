@@ -11,6 +11,11 @@ class PlayerControls {
       w: {index: 0, sign: 1, active: 0},
       s: {index: 0, sign: -1, active: 0},
     };
+    this.mouseMove = {
+      x: 0,
+      y: 0,
+    };
+
     this.initKeys();
 
     function getLatlong() {
@@ -23,42 +28,38 @@ class PlayerControls {
   }
 
   initKeys() {
-    let self = this;
-    let startX, startY;
     this.onKeyPress = this.onKeyPress.bind(this);
+    this.onMouseMove = this.onMouseMove.bind(this);
+    this.onMouseDown = this.onMouseDown.bind(this);
+    this.onMouseUp = this.onMouseUp.bind(this);
+
     document.addEventListener('keydown', this.onKeyPress);
     document.addEventListener('keyup', this.onKeyPress);
+    document.addEventListener('mouseup', this.onMouseUp);
+    this.canvas.addEventListener('mousedown', this.onMouseDown);
+  }
 
+  onMouseDown(e) {
+    this.canvas.addEventListener('mousemove', this.onMouseMove);
+    this.mouseMove.X = e.clientX;
+    this.mouseMove.y = e.clientY;
+  }
 
-    function downClbk(e) {
-      self.canvas.addEventListener('mousemove', moveClbk);
-      startX = e.clientX;
-      startY = e.clientY;
-    }
+  onMouseUp() {
+    this.canvas.removeEventListener('mousemove', this.onMouseMove);
+    this.manualRotateRate = quat.create();
+  }
 
-    function upClbk(e) {
-      self.canvas.removeEventListener('mousemove', moveClbk);
-      self.manualRotateRate[0] = 0;
-      self.manualRotateRate[1] = 0;
-      self.manualRotateRate[2] = 0;
-    }
+  onMouseMove(e) {
+    let delX = e.clientX - this.mouseMove.X;
+    let delY = e.clientY - this.mouseMove.y;
+    let min = Math.min(this.canvas.width, this.canvas.height);
 
-    function moveClbk(e) {
-      let delX = e.clientX - startX;
-      let delY = e.clientY - startY;
-      let width = self.canvas.width;
-      let height = self.canvas.height;
-      let min = Math.min(width, height);
+    this.manualRotateRate[0] += -delY * 2 / min;
+    this.manualRotateRate[1] += -delX * 2 / min;
 
-      self.manualRotateRate[0] += -delY * 2 / min;
-      self.manualRotateRate[1] += -delX * 2 / min;
-
-      startX = e.clientX;
-      startY = e.clientY;
-    }
-
-    self.canvas.addEventListener('mousedown', downClbk);
-    self.canvas.addEventListener('mouseup', upClbk);
+    this.mouseMove.X = e.clientX;
+    this.mouseMove.y = e.clientY;
   }
 
   onKeyPress(event) {
@@ -102,10 +103,9 @@ class PlayerControls {
   destroy() {
     document.removeEventListener('keydown', this.onKeyPress);
     document.removeEventListener('keyup', this.onKeyPress);
-    this.canvas.removeEventListener('mousedown');
-    this.canvas.removeEventListener('mouseup');
-    this.canvas.removeEventListener('mousemove');
-
+    document.removeEventListener('mouseup', this.onMouseUp);
+    this.canvas.removeEventListener('mousedown', this.onMouseDown);
+    this.canvas.removeEventListener('mousemove', this.onMouseMove);
     this.video = null;
     this.canvas = null;
   }
