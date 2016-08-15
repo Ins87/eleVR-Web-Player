@@ -60,13 +60,12 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var video = document.getElementById('video');
-      var player = new EleVRPlayer(video);
+      window.player = new EleVRPlayer(video);
 
       document.addEventListener('touchstart', function(){
         video.play();
       })
     });
-
   </script>
 </div>
 
