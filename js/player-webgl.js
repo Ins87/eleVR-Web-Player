@@ -1,7 +1,7 @@
 class PlayerWebGL {
   constructor(video, canvas) {
-    var self = this;
-    this.eyeCount = 1;
+    let self = this;
+    this.stereoscopicMode = false;
     this.video = video;
     this.canvas = canvas;
     this.gl = null;
@@ -106,9 +106,9 @@ class PlayerWebGL {
       this.controls.latlong[0] += this.controls.manualRotateRate[0] * interval * 90;
       this.controls.latlong[1] += this.controls.manualRotateRate[1] * interval * 90;
 
-      var ratio = Math.PI / 180 / 2;
-      var yaw = quat.fromValues(Math.cos(ratio * this.controls.latlong[1]), 0, -Math.sin(ratio * this.controls.latlong[1]), 0);
-      var pitch = quat.fromValues(Math.cos(ratio * this.controls.latlong[0]), 0, 0, -Math.sin(ratio * this.controls.latlong[0]));
+      let ratio = Math.PI / 180 / 2;
+      let yaw = quat.fromValues(Math.cos(ratio * this.controls.latlong[1]), 0, -Math.sin(ratio * this.controls.latlong[1]), 0);
+      let pitch = quat.fromValues(Math.cos(ratio * this.controls.latlong[0]), 0, 0, -Math.sin(ratio * this.controls.latlong[0]));
 
       // this works but then the originRotation is not applied
       quat.multiply(this.controls.manualRotation, yaw, pitch);
@@ -129,7 +129,7 @@ class PlayerWebGL {
       this.drawEye('right', perspectiveMatrix);
     } else {
       let ratio;
-      if (this.eyeCount === 2) {
+      if (this.stereoscopicMode) {
         ratio = (this.canvas.width / 2) / this.canvas.height;
         mat4.perspective(perspectiveMatrix, Math.PI / 2, ratio, 0.1, 10);
         this.drawEye('left', perspectiveMatrix);
@@ -301,8 +301,8 @@ class PlayerWebGL {
     this.controls = controls;
   }
 
-  setEyeCount(eyeCount) {
-    this.eyeCount = eyeCount;
+  toggleStereoscopicMode() {
+    this.stereoscopicMode = !this.stereoscopicMode;
   }
 
   getShaderByName(name, type) {

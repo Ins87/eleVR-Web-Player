@@ -36,7 +36,7 @@ class EleVRPlayer {
     this.start = this.start.bind(this);
     this.video.addEventListener('playing', this.start);
 
-    this.setEyeCount = (eyeCount) => this.webGL.setEyeCount(eyeCount);
+    this.toggleStereoscopicMode = () => this.webGL.toggleStereoscopicMode();
   }
 
   start() {
