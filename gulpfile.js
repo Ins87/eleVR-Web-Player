@@ -29,7 +29,7 @@ gulp.task('watch', ['connect', 'build'], function () {
   gulp.watch(srcFiles, ['build']); // Todo $.connect.reload
 });
 
-gulp.task('build', function () {
+gulp.task('build', ['buildStyle'], function () {
   let depStream = gulp.src(depFiles, {base: './'});
   let srcStream = gulp.src(srcFiles).pipe($.babel({
     presets: ['es2015'],
@@ -40,5 +40,12 @@ gulp.task('build', function () {
     .pipe($.concat('player.min.js'))
     .pipe($.uglify())
     .pipe($.sourcemaps.write('.'))
+    .pipe(gulp.dest('dist'));
+});
+
+gulp.task('buildStyle', function () {
+  return gulp.src('css/*.css')
+    .pipe($.concat('player.min.css'))
+    .pipe($.cssmin())
     .pipe(gulp.dest('dist'));
 });
