@@ -2,6 +2,7 @@ class PlayerControls {
   constructor(canvas, controlLayer) {
     this.canvas = canvas;
     this.controlLayer = controlLayer ? controlLayer : canvas;
+    this.controlLayer.classList.add('elevr-control');
     this.manualRotateRate = new Float32Array([0, 0, 0]);  // Vector, camera-relative
     this.latlong = getLatlong();
     this.manualRotation = quat.create();
@@ -107,6 +108,7 @@ class PlayerControls {
     document.removeEventListener('mouseup', this.onMouseUp);
     document.removeEventListener('mousemove', this.onMouseMove);
     this.controlLayer.removeEventListener('mousedown', this.onMouseDown);
+    this.controlLayer.classList.remove('elevr-control');
     this.controlLayer = null;
     this.canvas = null;
   }

@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-.elevr {
+.elevr-control {
   cursor: -webkit-grab;
   cursor: -moz-grab;
   cursor: grab;
 }
 
-.elevr:active {
+.elevr-control:active {
   cursor: -webkit-grabbing;
   cursor: -moz-grabbing;
   cursor: grabbing;
