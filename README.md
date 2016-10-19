@@ -40,7 +40,7 @@ Using device orientation controls, it has historically worked on Chrome on Andro
 ## Running your own video ##
 The easiest way to run your own video is to click the folder icon and load your video from there. You may then need to choose the projection for your video from the projection selector.
 
-You can load your own video from the javascript console, by typing loadVideo("0myVideo.mp4"). If your video is equirectangular 2D, preface your video by 0. If it is stereo top/bottom, preface it by 1. These numbers correspond to the projections in the projectionEnum declaration in elevr-player.js.
+You can load your own video from the javascript console, by typing loadVideo("0myVideo.mp4"). If your video is equirectangular 2D, preface your video by 0. If it is stereo top/bottom, preface it by 1. These numbers correspond to the projections in the projectionEnum declaration in ele-vr-player.js.
 
 If you want to add your video to the drop-down, create a new option in the html video-select element that looks like:
 
