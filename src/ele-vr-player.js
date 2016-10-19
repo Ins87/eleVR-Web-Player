@@ -11,7 +11,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-class EleVRPlayer {
+import PlayerWebGL from './player-webgl';
+import PlayerControls from './player-controls';
+import util from './util';
+
+require('../shaders/shader.fs');
+require('../shaders/shader.vs');
+
+export default class EleVRPlayer {
   constructor(sourceVideo, options = {}) {
     this.video = sourceVideo;
     this.canvas = document.createElement('canvas');

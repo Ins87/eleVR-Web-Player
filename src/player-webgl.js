@@ -1,6 +1,11 @@
-class PlayerWebGL {
+import { mat4, quat } from 'gl-matrix';
+import util from './util';
+import webVR from './webvr';
+import PhoneVR from './phonevr';
+
+export default class PlayerWebGL {
   constructor(video, canvas) {
-    let self = this;
+    const self = this;
     this.stereoscopicMode = false;
     this.video = video;
     this.canvas = canvas;
@@ -46,7 +51,7 @@ class PlayerWebGL {
     }
 
     function loadShader() { // Todo extract
-      let params = {
+      const params = {
         fragmentShaderName: 'fs',
         vertexShaderName: 'vs',
         attributes: ['aVertexPosition'],
@@ -67,14 +72,14 @@ class PlayerWebGL {
 
       self.attributes = {};
       for (let i = 0; i < params.attributes.length; i++) {
-        let attributeName = params.attributes[i];
+        const attributeName = params.attributes[i];
         self.attributes[attributeName] = self.gl.getAttribLocation(self.program, attributeName);
         self.gl.enableVertexAttribArray(self.attributes[attributeName]);
       }
 
       self.uniforms = {};
       for (let i = 0; i < params.uniforms.length; i++) {
-        let uniformName = params.uniforms[i];
+        const uniformName = params.uniforms[i];
         self.uniforms[uniformName] = self.gl.getUniformLocation(self.program, uniformName);
         self.gl.enableVertexAttribArray(self.attributes[uniformName]);
       }
@@ -101,14 +106,14 @@ class PlayerWebGL {
 
     if (this.timing.prevFrameTime) {
       // Apply manual controls.
-      let interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
+      const interval = (this.timing.frameTime - this.timing.prevFrameTime) * 0.001;
 
       this.controls.latlong[0] += this.controls.manualRotateRate[0] * interval * 90;
       this.controls.latlong[1] += this.controls.manualRotateRate[1] * interval * 90;
 
-      let ratio = Math.PI / 180 / 2;
-      let yaw = quat.fromValues(Math.cos(ratio * this.controls.latlong[1]), 0, -Math.sin(ratio * this.controls.latlong[1]), 0);
-      let pitch = quat.fromValues(Math.cos(ratio * this.controls.latlong[0]), 0, 0, -Math.sin(ratio * this.controls.latlong[0]));
+      const ratio = Math.PI / 180 / 2;
+      const yaw = quat.fromValues(Math.cos(ratio * this.controls.latlong[1]), 0, -Math.sin(ratio * this.controls.latlong[1]), 0);
+      const pitch = quat.fromValues(Math.cos(ratio * this.controls.latlong[0]), 0, 0, -Math.sin(ratio * this.controls.latlong[0]));
 
       // this works but then the originRotation is not applied
       quat.multiply(this.controls.manualRotation, yaw, pitch);
@@ -118,11 +123,11 @@ class PlayerWebGL {
     }
 
     let perspectiveMatrix = mat4.create();
-    let vrHMD = webVR.getInstance().vrHMD;
+    const vrHMD = webVR.vrHMD;
 
     if (!!vrHMD) {
-      let leftParams = vrHMD.getEyeParameters('left');
-      let rightParams = vrHMD.getEyeParameters('right');
+      const leftParams = vrHMD.getEyeParameters('left');
+      const rightParams = vrHMD.getEyeParameters('right');
       perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(leftParams.recommendedFieldOfView, 0.1, 10);
       this.drawEye('left', perspectiveMatrix);
       perspectiveMatrix = util.mat4PerspectiveFromVRFieldOfView(rightParams.recommendedFieldOfView, 0.1, 10);
@@ -161,7 +166,7 @@ class PlayerWebGL {
   }
 
   drawEye(eye, projectionMatrix) {
-    let self = this;
+    const self = this;
     this.gl.useProgram(this.program);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
@@ -175,13 +180,13 @@ class PlayerWebGL {
     this.gl.uniform1f(this.uniforms.eye, eye === 'right' ? 1 : 0);
     this.gl.uniform1f(this.uniforms.projection, this.projection);
 
-    let rotation = mat4.create();
-    let totalRotation = getTotalRotation();
+    const rotation = mat4.create();
+    const totalRotation = getTotalRotation();
     mat4.fromQuat(rotation, totalRotation);
 
-    let projectionInverse = mat4.create();
+    const projectionInverse = mat4.create();
     mat4.invert(projectionInverse, projectionMatrix);
-    let inv = mat4.create();
+    const inv = mat4.create();
     mat4.multiply(inv, rotation, projectionInverse);
 
     this.gl.uniformMatrix4fv(this.uniforms.proj_inv, false, inv);
@@ -203,11 +208,11 @@ class PlayerWebGL {
     this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_SHORT, 0);
 
     function getTotalRotation() {
-      let totalRotation = quat.create();
+      const totalRotation = quat.create();
       let sensorOrientation = quat.create();
 
-      if (!!webVR.getInstance().vrSensor) {
-        let state = webVR.getInstance().vrSensor.getState();
+      if (!!webVR.vrSensor) {
+        let state = webVR.vrSensor.getState();
         if (state !== null && state.orientation !== null && typeof state.orientation !== 'undefined' &&
           state.orientation.x !== 0 &&
           state.orientation.y !== 0 &&
@@ -216,7 +221,7 @@ class PlayerWebGL {
           sensorOrientation = new Float32Array([state.orientation.x, state.orientation.y, state.orientation.z, state.orientation.w]);
         }
       } else {
-        sensorOrientation = PhoneVR.getInstance().rotationQuat();
+        sensorOrientation = PhoneVR.rotationQuat();
       }
       quat.multiply(totalRotation, self.controls.manualRotation, sensorOrientation);
 
@@ -245,7 +250,7 @@ class PlayerWebGL {
   initBuffers() {
     this.positionsBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionsBuffer);
-    let positions = [
+    const positions = [
       -1.0, -1.0,
       1.0, -1.0,
       1.0, 1.0,
@@ -255,7 +260,7 @@ class PlayerWebGL {
 
     this.verticesIndexBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.verticesIndexBuffer);
-    let vertexIndices = [
+    const vertexIndices = [
       0, 1, 2, 0, 2, 3,
     ];
     this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER,
@@ -312,7 +317,7 @@ class PlayerWebGL {
       return null;
     }
 
-    let theSource = window.shader[name];
+    const theSource = window.shader[name];
 
     if (type === 'x-fragment') {
       result = this.gl.createShader(this.gl.FRAGMENT_SHADER);

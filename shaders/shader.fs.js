@@ -50,3 +50,4 @@ window.shader.fs = `
     gl_FragColor = directionToColor(vDirection, eye, projection);
   }
 `;
+
