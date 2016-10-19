@@ -1,0 +1,11 @@
+{
+  "extends": "airbnb",
+  "parser": "babel-eslint",
+  "env": {
+    "browser": true
+  },
+  "ecmaFeatures": {
+    "forOf": true,
+    "es6": true
+  }
+}
