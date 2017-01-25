@@ -7,7 +7,6 @@ export default class PlayerControls {
     this.canvas = canvas;
     this.controlLayer = controlLayer;
     this.controlLayer.classList.add('elevr-control');
-    this.controlLayer.tabIndex = '-1';
     this.manualRotateRate = new Float32Array([0, 0, 0]);  // Vector, camera-relative
     this.latlong = getLatlong();
     this.manualRotation = quat.create();
@@ -38,18 +37,28 @@ export default class PlayerControls {
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
+    this.registerDocumentKeyHandler = this.registerDocumentKeyHandler.bind(this);
+    this.unRegisterDocumentKeyHandler = this.unRegisterDocumentKeyHandler.bind(this);
 
     this.controlLayer.addEventListener('mousedown', this.onMouseDown);
-    this.controlLayer.addEventListener('keydown', this.onKeyPress);
+    this.controlLayer.addEventListener('mouseenter', this.registerDocumentKeyHandler);
+    this.controlLayer.addEventListener('mouseleave', this.unRegisterDocumentKeyHandler);
     document.addEventListener('keyup', this.onKeyPress);
     document.addEventListener('mouseup', this.onMouseUp);
+  }
+
+  registerDocumentKeyHandler() {
+    document.addEventListener('keydown', this.onKeyPress);
+  }
+
+  unRegisterDocumentKeyHandler() {
+    document.removeEventListener('keydown', this.onKeyPress);
   }
 
   onMouseDown(e) {
     document.addEventListener('mousemove', this.onMouseMove);
     this.mouseMove.X = e.clientX;
     this.mouseMove.y = e.clientY;
-    this.controlLayer.focus();
     e.preventDefault();
   }
 
@@ -109,10 +118,10 @@ export default class PlayerControls {
   }
 
   destroy() {
+    this.unRegisterDocumentKeyHandler();
     document.removeEventListener('keyup', this.onKeyPress);
     document.removeEventListener('mouseup', this.onMouseUp);
     document.removeEventListener('mousemove', this.onMouseMove);
-    this.controlLayer.removeEventListener('keydown', this.onKeyPress);
     this.controlLayer.removeEventListener('mousedown', this.onMouseDown);
     this.controlLayer.classList.remove('elevr-control');
     this.controlLayer = null;
