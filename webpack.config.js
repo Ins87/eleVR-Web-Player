@@ -21,7 +21,7 @@ if (env === 'build') {
 module.exports = () => {
   return {
     entry: path.resolve(process.cwd(), 'src', 'ele-vr-player.js'),
-    devtool: 'source-map',
+    devtool: 'cheap-module-eval-source-map',
     output: {
       path: path.resolve(process.cwd(), 'dist'),
       publicPath: '/dist',
